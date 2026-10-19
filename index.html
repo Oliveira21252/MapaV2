@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mapa do Conhecimento Sagrado 3.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+  --bg:#070312;--fg:#f4eeff;--mut:#a79ec4;--gold:#ffd166;--glow:#ffe9b0;
+  --rosa:#ff4d8d;--ciano:#22e0d8;--ambar:#ffb14d;--viol:#a06bff;
+  --panel:rgba(17,11,36,.86);--panel2:rgba(24,16,50,.92);--line:rgba(167,124,255,.24);
+  --ok:#4ade80;--err:#ff5c6c;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--fg);overflow:hidden;user-select:none}
+h1,h2,h3,h4,.cz{font-family:'Cinzel',serif;letter-spacing:.05em}
+canvas#gl{position:fixed;inset:0;z-index:1;display:block;touch-action:none}
+canvas#fx{position:fixed;inset:0;z-index:60;pointer-events:none}
+#vig{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 120% 90% at 50% 45%,transparent 55%,rgba(3,1,10,.55) 100%)}
+button{font-family:inherit}
+
+body.nogl #gl{display:none}
+body.nogl{background:radial-gradient(ellipse 80% 60% at 50% 30%,#1a1038,#070312 80%)}
+/* ===== botões ===== */
+.btn{cursor:pointer;border:1px solid var(--line);background:linear-gradient(140deg,rgba(160,107,255,.16),rgba(34,224,216,.07));color:var(--fg);padding:.9rem 2.4rem;font-size:1.02rem;font-weight:600;letter-spacing:.08em;border-radius:14px;position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s,border-color .25s}
+.btn:hover{transform:translateY(-2px);border-color:rgba(255,209,102,.55);box-shadow:0 8px 34px rgba(160,107,255,.28)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.14) 50%,transparent 70%);transform:translateX(-120%);transition:transform .7s}
+.btn:hover::after{transform:translateX(120%)}
+.btn.gold{border-color:rgba(255,209,102,.6);background:linear-gradient(140deg,rgba(255,209,102,.2),rgba(255,77,141,.1));color:var(--glow)}
+.btn.sm{padding:.55rem 1.2rem;font-size:.85rem;border-radius:10px}
+.btn.gho{background:rgba(255,255,255,.03)}
+
+/* ===== telas overlay ===== */
+.scr{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s;padding:1.2rem;overflow-y:auto}
+.scr.on{opacity:1;pointer-events:all}
+
+/* ===== INTRO ===== */
+#intro{z-index:45;background:radial-gradient(ellipse 70% 55% at 50% 38%,rgba(160,107,255,.12),transparent 70%)}
+#intro .ttl{font-size:clamp(2rem,7vw,4.2rem);font-weight:900;text-align:center;line-height:1.08;background:linear-gradient(100deg,#ffd166 0%,#ff4d8d 35%,#a06bff 70%,#22e0d8 100%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 7s ease-in-out infinite;text-shadow:0 0 60px rgba(160,107,255,.25)}
+@keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+#intro .sub{color:var(--mut);letter-spacing:.35em;font-size:.72rem;text-transform:uppercase;margin:.8rem 0 1.4rem;text-align:center}
+#intro .lore{max-width:560px;text-align:center;color:var(--mut);font-weight:300;font-size:1rem;line-height:1.75;margin-bottom:1.6rem}
+#intro .lore b{color:var(--glow);font-weight:600}
+.orn{display:flex;align-items:center;gap:.9rem;width:min(420px,80vw);margin:.4rem 0 1.2rem}
+.orn::before,.orn::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(255,209,102,.5),transparent)}
+.orn i{color:var(--gold);font-size:.65rem;animation:spinf 9s linear infinite}
+@keyframes spinf{to{transform:rotate(360deg)}}
+#intro .tags{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.8rem}
+#intro .tag{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);border:1px solid var(--line);border-radius:99px;padding:.35rem .9rem;background:rgba(255,255,255,.02)}
+#mascotWrap{position:fixed;left:1.1rem;bottom:1rem;z-index:55;width:158px;height:158px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer;transition:all .5s cubic-bezier(.34,1.56,.64,1)}
+#mascotWrap.center{left:50%;bottom:auto;top:14%;width:210px;height:210px;transform:translateX(-50%)}
+#mcanvas{width:100%;height:100%;display:block;filter:drop-shadow(0 0 26px rgba(160,107,255,.35))}
+#bubble{position:absolute;left:calc(100% + 6px);bottom:46%;width:max-content;max-width:238px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;border-bottom-left-radius:3px;padding:.6rem .85rem;font-size:.83rem;line-height:1.45;color:var(--fg);opacity:0;transform:translateY(8px) scale(.92);transition:all .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;box-shadow:0 10px 34px rgba(0,0,0,.45)}
+#bubble.on{opacity:1;transform:translateY(0) scale(1)}
+#bubble::after{content:'';position:absolute;left:-6px;bottom:12px;width:10px;height:10px;background:var(--panel2);border-left:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(45deg)}
+#bubble .bk{display:block;font-family:'Cinzel',serif;font-size:.62rem;color:var(--gold);letter-spacing:.2em;margin-bottom:.15rem}
+#mascotWrap.center #bubble{left:calc(100% + 2px)}
+@media(max-width:640px){
+  #bubble{left:-24px;right:auto;bottom:calc(100% + 10px);width:max-content;max-width:235px}
+  #bubble::after{left:34px;right:auto;bottom:-6px;top:auto;transform:rotate(90deg)}
+  #mascotWrap.center #bubble{left:calc(50% - 112px);bottom:calc(100% + 10px)}
+}
+
+/* ===== HUD ===== */
+#hud{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;transition:opacity .6s}
+#hud.on{opacity:1}
+#hud>*{pointer-events:auto}
+#topbar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:.7rem;padding:.7rem .9rem;background:linear-gradient(to bottom,rgba(5,2,14,.88),rgba(5,2,14,0));flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:.5rem;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:.45rem .8rem;font-size:.8rem;backdrop-filter:blur(10px)}
+.chip i{color:var(--gold)}
+#lvchip b{color:var(--glow);font-weight:600}
+.bar{position:relative;width:132px;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar>i{position:absolute;inset:0;width:0%;border-radius:99px;background:linear-gradient(90deg,#ffd166,#ff4d8d);transition:width .6s cubic-bezier(.22,1,.36,1)}
+.bar.seal>i{background:linear-gradient(90deg,#22e0d8,#a06bff)}
+#sealchip .bar{width:110px}
+#stchip{display:none;border-color:rgba(255,120,60,.5)}
+#stchip.on{display:inline-flex;animation:pop .3s}
+#stchip i{color:#ff8a4d}
+@keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.tgl{cursor:pointer;transition:all .25s}
+.tgl.off i{opacity:.3}
+.tgl:hover{border-color:var(--gold)}
+#legend{position:absolute;left:.9rem;top:64px;display:flex;flex-direction:column;gap:.45rem}
+.leg{display:flex;align-items:center;gap:.55rem;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);background:rgba(8,4,20,.6);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:.4rem .7rem;backdrop-filter:blur(6px);transition:all .4s}
+.leg .dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 10px currentColor}
+.leg.lock{opacity:.32;filter:grayscale(.7)}
+.leg.cur{border-color:var(--line);background:rgba(30,18,60,.75);color:var(--fg)}
+.leg .lp{margin-left:auto;font-weight:600;color:var(--fg)}
+#hint{position:absolute;right:.9rem;bottom:.9rem;font-size:.7rem;color:var(--mut);letter-spacing:.14em;text-transform:uppercase;text-align:right;line-height:1.9;background:rgba(8,4,20,.5);padding:.5rem .8rem;border-radius:10px;border:1px solid rgba(255,255,255,.05)}
+#hint i{color:var(--gold);margin-right:.3rem}
+
+/* tooltip da estrela */
+#ttip{position:fixed;z-index:35;pointer-events:none;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:.55rem .85rem;font-size:.8rem;opacity:0;transform:translate(-50%,-120%) scale(.9);transition:opacity .2s,transform .2s;max-width:230px;text-align:center;backdrop-filter:blur(8px)}
+#ttip.on{opacity:1;transform:translate(-50%,-128%) scale(1)}
+#ttip .tn{font-family:'Cinzel',serif;font-weight:700;color:var(--glow);font-size:.86rem}
+#ttip .ts{font-size:.7rem;color:var(--mut);margin-top:.1rem;letter-spacing:.06em}
+
+/* label das constelações (projetado do 3D) */
+.clabel{position:fixed;z-index:25;pointer-events:none;transform:translate(-50%,-50%);text-align:center;font-family:'Cinzel',serif;letter-spacing:.22em;font-size:.68rem;text-transform:uppercase;color:var(--mut);text-shadow:0 2px 14px rgba(0,0,0,.9);transition:opacity .4s}
+.clabel b{display:block;font-size:.78rem;color:var(--fg);font-weight:700}
+.clabel .lp{color:var(--gold)}
+
+/* ===== DRAWER da missão ===== */
+#drawer{position:fixed;top:0;right:0;bottom:0;z-index:50;width:min(480px,100vw);background:linear-gradient(160deg,var(--panel2),rgba(12,7,28,.96));border-left:1px solid var(--line);transform:translateX(105%);transition:transform .55s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column;box-shadow:-30px 0 80px rgba(0,0,0,.55)}
+#drawer.on{transform:translateX(0)}
+#dhead{padding:1.1rem 1.3rem .9rem;border-bottom:1px solid rgba(255,255,255,.06);position:relative;overflow:hidden}
+#dhead .gl{position:absolute;top:-40px;right:-40px;width:150px;height:150px;border-radius:50%;filter:blur(46px);opacity:.5}
+#dkind{font-size:.66rem;letter-spacing:.28em;text-transform:uppercase;color:var(--mut)}
+#dname{font-size:1.5rem;font-weight:900;margin-top:.25rem;color:var(--glow)}
+#dteaser{color:var(--mut);font-size:.85rem;margin-top:.2rem;font-weight:300}
+#dbody{flex:1;overflow-y:auto;padding:1.2rem 1.3rem;scrollbar-width:thin;scrollbar-color:rgba(160,107,255,.4) transparent}
+#dbody::-webkit-scrollbar{width:5px}
+#dbody::-webkit-scrollbar-thumb{background:rgba(160,107,255,.35);border-radius:99px}
+.dfoot{padding:.9rem 1.3rem;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:.7rem;justify-content:flex-end;align-items:center}
+#dx{position:absolute;top:.85rem;right:.9rem;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--mut);cursor:pointer;font-size:.9rem;transition:all .25s;z-index:2}
+#dx:hover{color:var(--fg);border-color:var(--gold);transform:rotate(90deg)}
+
+/* desafios */
+.chlab{display:inline-flex;align-items:center;gap:.45rem;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.9rem}
+.chlab i{font-size:.75rem}
+.chq{font-size:1.02rem;line-height:1.6;font-weight:400;margin-bottom:1.1rem}
+.opt{display:flex;align-items:center;gap:.8rem;width:100%;text-align:left;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:.85rem 1rem;margin-bottom:.65rem;cursor:pointer;color:var(--fg);font-size:.92rem;line-height:1.45;transition:all .22s;position:relative;overflow:hidden}
+.opt:hover:not(.off){border-color:rgba(160,107,255,.55);background:rgba(160,107,255,.08);transform:translateX(4px)}
+.opt .ol{flex-shrink:0;width:26px;height:26px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:var(--mut);transition:all .22s}
+.opt.right{border-color:var(--ok);background:rgba(74,222,128,.12);animation:pop .4s}
+.opt.right .ol{background:var(--ok);border-color:var(--ok);color:#04220f}
+.opt.wrong{border-color:var(--err);background:rgba(255,92,108,.1);animation:shk .45s}
+.opt.wrong .ol{background:var(--err);border-color:var(--err);color:#2b0208}
+.opt.off{pointer-events:none;opacity:.82}
+@keyframes shk{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.tfbt{display:flex;gap:.8rem;margin-top:.4rem}
+.tf{flex:1;padding:1rem;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--fg);font-size:.95rem;font-weight:600;cursor:pointer;transition:all .22s;display:flex;flex-direction:column;align-items:center;gap:.4rem}
+.tf i{font-size:1.25rem}
+.tf:hover:not(.off){transform:translateY(-3px);border-color:rgba(160,107,255,.6);background:rgba(160,107,255,.1)}
+.tf.right{border-color:var(--ok);background:rgba(74,222,128,.14)}
+.tf.wrong{border-color:var(--err);background:rgba(255,92,108,.12);animation:shk .45s}
+.tf.off{pointer-events:none}
+.seqit{display:flex;align-items:center;gap:.75rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:.8rem .95rem;margin-bottom:.55rem;cursor:pointer;font-size:.88rem;line-height:1.4;transition:all .22s}
+.seqit:hover:not(.off){border-color:rgba(255,209,102,.5);background:rgba(255,209,102,.06)}
+.seqit .sn{flex-shrink:0;width:26px;height:26px;border-radius:50%;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:var(--mut)}
+.seqit.fixed{border-color:var(--ok);background:rgba(74,222,128,.1);cursor:default}
+.seqit.fixed .sn{border-style:solid;background:var(--ok);color:#04220f}
+.seqit.err{animation:shk .45s;border-color:var(--err)}
+.seqit.off{pointer-events:none}
+.tiles{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+.tl{min-width:44px;height:46px;padding:0 .7rem;border-radius:10px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(160,107,255,.14),rgba(34,224,216,.06));color:var(--fg);font-size:1.05rem;font-weight:800;letter-spacing:.06em;cursor:pointer;transition:all .18s;text-transform:lowercase}
+.tl:hover:not(.used){transform:translateY(-3px);border-color:var(--gold);box-shadow:0 6px 18px rgba(255,209,102,.2)}
+.tl.used{opacity:.18;pointer-events:none}
+#built{min-height:54px;border:1px dashed var(--line);border-radius:12px;padding:.5rem;display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;margin-bottom:.8rem;background:rgba(0,0,0,.25)}
+#built .ph{color:var(--mut);font-size:.8rem;letter-spacing:.1em;padding:0 .5rem}
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin-bottom:.9rem}
+.mc{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(160,107,255,.12),rgba(255,77,141,.05));cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.72rem;padding:.3rem;text-align:center;line-height:1.25;transition:all .2s;color:transparent;position:relative}
+.mc .mf{color:var(--gold);font-size:1.1rem;transition:opacity .2s}
+.mc.flip{background:var(--panel2);color:var(--fg);border-color:rgba(255,209,102,.4)}
+.mc.flip .mf{display:none}
+.mc.done{border-color:var(--ok);background:rgba(74,222,128,.1);color:var(--ok);pointer-events:none;opacity:.75}
+.mc.err{animation:shk .45s;border-color:var(--err)}
+.mchk{display:flex;flex-direction:column;gap:.6rem}
+.mck{display:flex;align-items:center;gap:.8rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:.8rem .95rem;cursor:pointer;font-size:.88rem;line-height:1.4;transition:all .2s}
+.mck:hover{border-color:rgba(160,107,255,.5)}
+.mck .bx{flex-shrink:0;width:22px;height:22px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:transparent;transition:all .2s}
+.mck.sel{border-color:var(--ciano);background:rgba(34,224,216,.08)}
+.mck.sel .bx{background:var(--ciano);border-color:var(--ciano);color:#032220}
+.mck.right{border-color:var(--ok);background:rgba(74,222,128,.1)}
+.mck.wrongk{border-color:var(--err);background:rgba(255,92,108,.08)}
+.mck.off{pointer-events:none}
+.matchw{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+.mcol{display:flex;flex-direction:column;gap:.55rem}
+.mmi{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:.7rem .7rem;font-size:.78rem;line-height:1.35;cursor:pointer;transition:all .2s;color:var(--fg);text-align:left;min-height:52px}
+.mmi:hover:not(.off){border-color:rgba(255,209,102,.5)}
+.mmi.sel{border-color:var(--gold);background:rgba(255,209,102,.1)}
+.mmi.done{border-color:var(--ok);background:rgba(74,222,128,.08);pointer-events:none;opacity:.8}
+.mmi.err{animation:shk .45s;border-color:var(--err)}
+.mmi.off{pointer-events:none}
+
+/* feedback do desafio */
+.fback{margin-top:.4rem;border-radius:13px;padding:.9rem 1rem;font-size:.9rem;line-height:1.55;display:none;animation:fadeup .45s}
+.fback.on{display:block}
+.fback.ok{background:rgba(74,222,128,.09);border:1px solid rgba(74,222,128,.35);color:#b8f5cd}
+.fback.no{background:rgba(255,92,108,.08);border:1px solid rgba(255,92,108,.3);color:#ffd3d8}
+.fback .fm{font-family:'Cinzel',serif;color:var(--fg);display:block;margin-bottom:.2rem;font-size:.95rem}
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.mfph{font-family:'Cinzel',serif;color:var(--gold);font-size:.88rem;margin:.9rem 0 .3rem;letter-spacing:.06em;font-style:italic}
+
+/* conhecimento */
+.knsec{margin-bottom:1.15rem}
+.knsec h4{font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.knsec p,.knsec li{font-size:.88rem;line-height:1.65;color:#d8d0ee;font-weight:300}
+.knsec ul{list-style:none}
+.knsec li{padding:.4rem 0 .4rem 1.15rem;position:relative;border-bottom:1px dashed rgba(255,255,255,.05)}
+.knsec li::before{content:'◆';position:absolute;left:0;top:.45rem;font-size:.5rem;color:var(--viol)}
+.kbig{display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem}
+.kbig .ic{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:linear-gradient(140deg,rgba(255,209,102,.2),rgba(160,107,255,.12));border:1px solid rgba(255,209,102,.4);color:var(--gold);box-shadow:0 0 30px rgba(255,209,102,.15)}
+
+/* HUD inferior do drawer / situação bônus */
+.bonsit{background:rgba(34,224,216,.05);border:1px solid rgba(34,224,216,.25);border-radius:14px;padding:1rem 1.1rem;font-size:.92rem;line-height:1.65;margin-bottom:1rem;font-weight:300}
+.bonsit b{color:var(--ciano);font-weight:600}
+
+/* level up */
+#lvlf{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .45s;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(255,209,102,.14),transparent 70%)}
+#lvlf.on{opacity:1}
+#lvlf .ring{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,209,102,.7);animation:ringx 1.5s ease-out infinite}
+#lvlf .ring:nth-child(2){animation-delay:.5s}
+#lvlf .ring:nth-child(3){animation-delay:1s}
+@keyframes ringx{from{transform:scale(.4);opacity:1}to{transform:scale(4.2);opacity:0}}
+#lvlf .lu{font-size:.72rem;letter-spacing:.4em;text-transform:uppercase;color:var(--gold)}
+#lvfn{font-family:'Cinzel',serif;font-size:2.6rem;font-weight:900;background:linear-gradient(100deg,#ffd166,#ff4d8d,#a06bff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin:.4rem 0}
+#lvft{color:var(--fg);font-size:1.05rem;letter-spacing:.1em}
+
+/* toasts de conquista */
+#atoasts{position:fixed;top:70px;right:.9rem;z-index:65;display:flex;flex-direction:column;gap:.6rem;pointer-events:none}
+.ato{display:flex;align-items:center;gap:.8rem;background:var(--panel2);border:1px solid rgba(255,209,102,.45);border-radius:14px;padding:.75rem 1.1rem;min-width:250px;max-width:320px;box-shadow:0 12px 40px rgba(0,0,0,.5);animation:atoslide .5s cubic-bezier(.22,1.4,.36,1)}
+.ato.out{animation:atoout .5s forwards}
+@keyframes atoslide{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes atoout{to{transform:translateX(120%);opacity:0}}
+.ato .ai{width:40px;height:40px;border-radius:12px;background:linear-gradient(140deg,rgba(255,209,102,.25),rgba(255,77,141,.12));border:1px solid rgba(255,209,102,.5);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:1rem;flex-shrink:0}
+.ato .an{font-family:'Cinzel',serif;font-weight:700;color:var(--glow);font-size:.9rem}
+.ato .ad{font-size:.75rem;color:var(--mut);margin-top:.1rem}
+.ato .at{font-size:.6rem;letter-spacing:.25em;color:var(--gold);text-transform:uppercase}
+
+/* fx XP flutuante */
+.fxp{position:fixed;z-index:62;font-family:'Cinzel',serif;font-weight:900;color:var(--glow);text-shadow:0 0 18px rgba(255,209,102,.8);pointer-events:none;animation:xpf 1.4s ease-out forwards;font-size:1.15rem}
+@keyframes xpf{0%{opacity:0;transform:translateY(14px) scale(.7)}18%{opacity:1;transform:translateY(0) scale(1.15)}100%{opacity:0;transform:translateY(-70px) scale(1)}}
+
+/* modal conquistas */
+#achv{z-index:52;background:rgba(4,2,12,.7);backdrop-filter:blur(8px)}
+#achv .box{width:min(680px,94vw);max-height:82vh;overflow-y:auto;background:linear-gradient(160deg,var(--panel2),rgba(10,6,24,.97));border:1px solid var(--line);border-radius:20px;padding:1.6rem}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.7rem;margin-top:1rem}
+.acard{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:.9rem;display:flex;gap:.75rem;align-items:center;opacity:.4;transition:all .3s}
+.acard.got{opacity:1;border-color:rgba(255,209,102,.4);background:rgba(255,209,102,.05)}
+.acard .ai{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.05);color:var(--mut)}
+.acard.got .ai{background:linear-gradient(140deg,rgba(255,209,102,.3),rgba(255,77,141,.15));color:var(--gold)}
+.acard .an{font-weight:600;font-size:.85rem}
+.acard.got .an{color:var(--glow)}
+.acard .ad{font-size:.7rem;color:var(--mut);margin-top:.1rem;line-height:1.3}
+
+/* tela final */
+#final{z-index:56;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(255,209,102,.1),transparent 70%)}
+#final .ft{font-family:'Cinzel',serif;font-size:clamp(1.8rem,6vw,3.4rem);font-weight:900;text-align:center;background:linear-gradient(100deg,#ffd166,#ff4d8d,#a06bff,#22e0d8);background-size:200%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 6s infinite}
+#final .fs{color:var(--mut);text-align:center;max-width:520px;line-height:1.8;margin:1.2rem 0 1.8rem;font-weight:300}
+#final .fstats{display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.8rem}
+.fstat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:.8rem 1.4rem;text-align:center;min-width:110px}
+.fstat b{display:block;font-family:'Cinzel',serif;font-size:1.4rem;color:var(--glow)}
+.fstat span{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+
+/* responsivo */
+@media(max-width:640px){
+  #legend{display:none}
+  #hint{display:none}
+  #drawer{width:100vw;top:auto;height:78vh;border-radius:22px 22px 0 0;border-left:none;border-top:1px solid var(--line);transform:translateY(105%)}
+  #drawer.on{transform:translateY(0)}
+  #topbar{padding:.5rem .55rem;gap:.4rem}
+  .chip{font-size:.7rem;padding:.38rem .6rem}
+  .bar{width:90px}
+  .bar.seal{width:74px}
+  #mascotWrap{width:118px;height:118px;left:.5rem;bottom:.5rem}
+  #bubble{max-width:180px;font-size:.76rem}
+  #mascotWrap.center{width:170px;height:170px;top:12%}
+  #lvfn{font-size:2rem}
+}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="vig"></div>
+<canvas id="fx"></canvas>
+
+<!-- ===== INTRO ===== -->
+<div id="intro" class="scr on">
+  <div class="sub">Jornada Initiativa · Edição Cósmica 3.0</div>
+  <h1 class="ttl">Mapa do<br>Conhecimento Sagrado</h1>
+  <div class="orn"><i class="fas fa-star"></i></div>
+  <p class="lore">Dezesseis <b>selos de sabedoria</b> aguardam, dispersos por quatro constelações vivas — <b style="color:var(--rosa)">Toque</b>, <b style="color:var(--ciano)">Mente</b>, <b style="color:var(--ambar)">Corpo</b> e <b style="color:var(--viol)">Sagrado</b>. Navegue pela galáxia, desvende cada estrela e reacenda o <b>Nexo Central</b>.</p>
+  <div class="tags">
+    <span class="tag"><i class="fas fa-meteor" style="color:var(--gold);margin-right:.4rem"></i>Galáxia 3D navegável</span>
+    <span class="tag"><i class="fas fa-wand-magic-sparkles" style="color:var(--rosa);margin-right:.4rem"></i>Lumen, seu guia</span>
+    <span class="tag"><i class="fas fa-music" style="color:var(--ciano);margin-right:.4rem"></i>Trilha viva</span>
+  </div>
+  <button class="btn gold" onclick="startJ()"><i class="fas fa-rocket" style="margin-right:.55rem"></i>Iniciar Jornada</button>
+  <div style="margin-top:1.1rem;font-size:.68rem;color:var(--mut);letter-spacing:.14em">CONTEÚDO EDUCATIVO PARA ADULTOS · PROGRESSO SALVO AUTOMATICAMENTE</div>
+</div>
+
+<!-- ===== HUD ===== -->
+<div id="hud">
+  <div id="topbar">
+    <div class="chip" id="lvchip"><i class="fas fa-crown"></i><div><b id="lvt">Iniciado</b><div style="font-size:.62rem;color:var(--mut)" id="lvn">Nível 1</div></div></div>
+    <div class="chip"><div class="bar"><i id="xfill"></i></div><span style="font-size:.66rem;color:var(--mut)" id="xlab">0 XP</span></div>
+    <div class="chip" id="sealchip"><i class="fas fa-certificate" style="color:var(--ciano)"></i><div class="bar seal"><i id="pfill"></i></div><span style="font-size:.66rem;color:var(--mut)" id="ptxt">0/16</span></div>
+    <div class="chip" id="stchip"><i class="fas fa-fire"></i><b id="stn">x2</b></div>
+    <div style="flex:1"></div>
+    <div class="chip tgl" id="musT" onclick="togMus()" title="Música"><i class="fas fa-compact-disc"></i></div>
+    <div class="chip tgl" id="sfxT" onclick="togSfx()" title="Efeitos"><i class="fas fa-volume-high"></i></div>
+    <div class="chip tgl" onclick="openAch()" title="Conquistas"><i class="fas fa-trophy"></i></div>
+  </div>
+  <div id="legend"></div>
+  <div id="hint"><i class="fas fa-hand"></i>Arraste para orbitar<br><i class="fas fa-magnifying-glass-plus"></i>Role para aproximar<br><i class="fas fa-star"></i>Clique numa estrela</div>
+</div>
+<div id="ttip"><div class="tn"></div><div class="ts"></div></div>
+
+<!-- ===== DRAWER DA MISSÃO ===== -->
+<div id="drawer">
+  <button id="dx" onclick="closeDrawer()"><i class="fas fa-xmark"></i></button>
+  <div id="dhead">
+    <div class="gl" id="dglow"></div>
+    <div id="dkind">Constelação</div>
+    <h3 id="dname">Missão</h3>
+    <div id="dteaser"></div>
+  </div>
+  <div id="dbody"></div>
+  <div class="dfoot" id="dfoot"></div>
+</div>
+
+<!-- ===== CONHECIMENTO (overlay) ===== -->
+<div id="know" class="scr">
+  <div style="width:min(620px,94vw);background:linear-gradient(160deg,var(--panel2),rgba(10,6,24,.97));border:1px solid var(--line);border-radius:20px;padding:1.6rem;max-height:86vh;overflow-y:auto" id="knowBox"></div>
+</div>
+
+<!-- ===== CONQUISTAS ===== -->
+<div id="achv" class="scr">
+  <div class="box">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="color:var(--glow);font-size:1.3rem"><i class="fas fa-trophy" style="color:var(--gold);margin-right:.5rem"></i>Conquistas</h3>
+      <button class="btn sm gho" onclick="closeAch()">Fechar</button>
+    </div>
+    <div class="agrid" id="agrid"></div>
+  </div>
+</div>
+
+<!-- ===== FINAL ===== -->
+<div id="final" class="scr">
+  <div class="sub" style="color:var(--mut);letter-spacing:.35em;font-size:.72rem;text-transform:uppercase;margin-bottom:.7rem">Jornada Completa</div>
+  <h1 class="ft">O Nexo Reacendeu-se</h1>
+  <p class="fs">Todos os dezesseis selos brilham dourados. As quatro constelações cantam em harmonia e o conhecimento que você carregou daqui é seu para praticar — com consciência, respeito e presença.</p>
+  <div class="fstats" id="fstats"></div>
+  <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center">
+    <button class="btn" onclick="backToMap()"><i class="fas fa-galaxy" style="margin-right:.5rem"></i>Contemplar a Galáxia</button>
+    <button class="btn gho" onclick="resetAll()"><i class="fas fa-rotate-left" style="margin-right:.5rem"></i>Nova Jornada</button>
+  </div>
+</div>
+
+<!-- ===== LEVEL UP ===== -->
+<div id="lvlf"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="lu">Nova Patente</div><div id="lvfn">Nível 2</div><div id="lvft">Explorador</div></div>
+<div id="atoasts"></div>
+
+<!-- ===== MASCOTE ===== -->
+<div id="mascotWrap" class="center"><canvas id="mcanvas"></canvas><div id="bubble"></div></div>
+<script>
+const RM=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'];
+const MS=[
+{id:0,name:"Tip Tip Boom",icon:"fa-bolt-lightning",teaser:"A arte dos três tempos",
+ch:{type:"quiz",q:"Qual a sequência correta do Método Tip Tip Boom?",opts:["Boom → Tip → Tip Tip","Tip → Tip Tip → Boom","Tip Tip → Boom → Tip","Boom → Tip Tip → Tip"],c:1},
+bon:{sit:"Durante a prática do Tip Tip Boom, a pessoa receptora fica tensa, com a respiração curta e os ombros rígidos. Qual é a conduta mais alinhada com o método?",opts:["Aumentar a intensidade rapidamente para 'quebrar' a tensão","Retornar à fase Tip, com toques leves, e respirar junto até o corpo relaxar","Interromper tudo e encerrar a prática definitivamente","Ignorar os sinais e continuar exatamente como estava"],c:1,exp:"O método é progressivo: quando o corpo tensiona, volta-se às fases leves (Tip), restabelecendo a respiração e a confiança antes de avançar novamente."},
+kn:{origin:"Técnica contemporânea derivada de estudos de sexologia comportamental sobre ciclos de resposta humana, desenvolvida para expandir a percepção sensorial em três fases progressivas.",steps:["Tip — Toque sutil e exploratório com pontas dos dedos, mapeando a região com leveza e curiosidade.","Tip Tip — Ritmo crescente com pressão moderada e cadência estabelecida, construindo expectativa sensorial.","Boom — Intensidade plena com consciência e presença total, entregando-se ao momento com integridade."],points:["Região perineal e períneo","Clitóris e capuz clitoriano","Pontos internos e parede anterior vaginal"],benefits:["Controle consciente sobre o ritmo de resposta","Ampliação da percepção sensorial","Maior consciência corporal e autoconhecimento"]}},
+{id:1,name:"Tic Tac",icon:"fa-arrows-left-right",teaser:"Ritmo alternado e preciso",
+ch:{type:"seq",items:["Pressão leve em um lado da região","Alternância rítmica para o lado oposto","Aumento gradual de velocidade e pressão","Manutenção do ritmo até resposta consciente"]},
+bon:{sit:"Ao manter o mesmo ritmo no Tic Tac por vários minutos, a pessoa receptora relata que a sensação 'adormeceu'. O que fazer?",opts:["Aumentar a velocidade ao máximo até o fim","Manter exatamente o mesmo ritmo, só que com mais força","Variar lado, pressão e velocidade, reiniciando a alternância com leveza","Parar imediatamente — a técnica falhou"],c:2,exp:"A alternância existe justamente para renovar a sensorialidade: variar lado, ritmo e pressão 'acorda' a receptividade neuromuscular."},
+kn:{origin:"Inspirada em ritmos de técnicas orientais de estimulação rítmica alternada, adaptada para maximizar a receptividade neuromuscular através da lateralidade.",steps:["Aplicação de pressão leve em um lado da região, estabelecendo contato e presença.","Alternância rítmica para o lado oposto, mantendo cadência constante e fluida.","Aumento progressivo de velocidade e pressão conforme a resposta do corpo.","Manutenção do ritmo até alcançar a resposta desejada com consciência plena."],points:["Grandes lábios — lateralidade alternada","Região clitoriana — abordagem cruzada","Entrada vaginal e períneo — ritmo sutil"],benefits:["Sincronização neuromuscular aprimorada","Aumento progressivo de sensibilidade","Desenvolvimento de controle ejaculatório"]}},
+{id:2,name:"Método Kivin",icon:"fa-rotate",teaser:"Estimulação lateral inovadora",
+ch:{type:"tf",st:"No Método Kivin, o posicionamento é lateral (cerca de 90°) e a língua se move no sentido vertical sobre a região clitoriana — e é justamente isso que acessa ângulos pouco explorados e evita a habituação sensorial.",c:true,exp:"A abordagem lateral de 90° com movimentos verticais é a assinatura do Kivin: estímulo fora do padrão convencional."},
+bon:{sit:"Ao aplicar o Kivin, o parceiro percebe que a parceira responde melhor quando ele varia a pressão a cada ciclo. Como proceder?",opts:["Fixar uma única pressão para não confundir o corpo","Adaptar pressão e velocidade conforme a resposta observada","Abandonar a técnica imediatamente","Pressionar cada vez mais forte, sem observação"],c:1,exp:"O Kivin prevê variação consciente de pressão e velocidade conforme a resposta — observação e comunicação fazem parte da técnica."},
+kn:{origin:"Desenvolvida por sexólogos contemporâneos. Traz uma abordagem radicalmente diferente da estimulação convencional.",steps:["Posicionamento do parceiro em ângulo lateral de 90° em relação ao corpo da parceira.","Estimulação com a língua em movimentos verticais constantes sobre a região clitoriana.","Variação de pressão e velocidade conforme a resposta observada, mantendo a lateralidade.","Inclusão opcional de vibração labial sutil para intensificar a experiência."],points:["Clitóris — abordagem lateral não convencional","Capuz clitoriano — estimulação indireta","Lábios menores e frênulo — áreas adjacentes"],benefits:["Evita a habituação sensorial pela novidade do ângulo","Acessa pontos raramente explorados","Intensifica a resposta orgásmica"]}},
+{id:3,name:"Karazza",icon:"fa-eye",teaser:"Conexão pelo olhar e respiração",
+ch:{type:"decode",scram:"ZRAAACRA",ans:"karazza",hint:"Do italiano 'acariciar'"},
+bon:{sit:"Um casal relata ansiedade de desempenho e dificuldade de se conectar intimamente. Qual recurso do Karazza é o mais indicado para começar?",opts:["Contato visual prolongado e respiração sincronizada, sem meta de resultado","Começar por uma massagem profunda e intensa","Planejar cada movimento com cronômetro","Evitar contato visual, pois constrange"],c:0,exp:"O Karazza começa pelo olhar e pela respiração compartilhada: presença sem cobrança é o antídoto para a ansiedade de desempenho."},
+kn:{origin:"Do italiano 'carazza' (acariciar), desenvolvida por terapeutas de casais europeus como técnica de reconexão emocional sem pressão de desempenho.",steps:["Estabelecimento de contato visual prolongado e intencional entre os parceiros.","Sincronização gradual da respiração, inspirando e expirando juntos.","Toque leve e consciente sem intenção de progressão — apenas presença.","Profundização da conexão emocional através da vulnerabilidade compartilhada."],points:["Olhos — ancoragem visual e presença","Peito e respiração — sincronização","Mãos e rosto — toque sutil","Campo energético próximo — conexão sem contato"],benefits:["Intimidade emocional profunda sem pressão","Redução da ansiedade de desempenho","Presença plena e atenção no momento"]}},
+{id:4,name:"Bodywork",icon:"fa-hands",teaser:"Trabalho corporal integrativo",
+ch:{type:"quiz",q:"Qual é a primeira etapa do Bodywork integrativo?",opts:["Liberação miofascial","Avaliação postural","Trabalho profundo","Integração final"],c:1},
+bon:{sit:"Na primeira sessão de Bodywork, o terapeuta recebe um cliente com dores crônicas nos ombros. Qual é o primeiro passo?",opts:["Aplicar trabalho profundo direto nos pontos de dor","Avaliação postural e identificação dos padrões de tensão","Ir direto à integração final com realinhamento","Alongamentos agressivos até o limite"],c:1,exp:"A avaliação postural abre o protocolo: sem mapear os padrões de tensão, o trabalho profundo perde direção e segurança."},
+kn:{origin:"Fusão contemporânea de técnicas ocidentais como Rolfing e Hellerwork com princípios orientais de trabalho corporal.",steps:["Avaliação postural e identificação de padrões de tensão no corpo.","Liberação miofascial superficial para preparar os tecidos.","Trabalho profundo em camadas musculares, seguindo as linhas de tensão.","Integração e realinhamento postural, permitindo ao corpo reorganizar-se."],points:["Fáscias e tecido conjuntivo","Pontos gatilho (trigger points)","Cadeias musculares e linhas de tensão","Inserções tendinosas e ósseas"],benefits:["Liberação de tensões crônicas acumuladas","Melhora da postura e mobilidade global","Maior consciência corporal integrativa"]}},
+{id:5,name:"Mindfulness",icon:"fa-brain",teaser:"Atenção plena aplicada à intimidade",
+ch:{type:"seq",items:["Ancoragem na respiração consciente","Escuta interna das sensações corporais","Observação de pensamentos sem julgamento","Aceitação gentil do momento presente"]},
+bon:{sit:"Durante a prática íntima com atenção plena, surgem pensamentos intrusivos e autocrítica. Segundo o Mindfulness, o que fazer?",opts:["Reprimir os pensamentos com força até sumirem","Culpar-se por não conseguir se concentrar","Observá-los como nuvens que passam e voltar gentilmente à respiração","Encerrar a prática e tentar outro dia"],c:2,exp:"Mindfulness treina a observação sem julgamento: pensamentos são fenômenos que passam; a âncora é sempre o retorno gentil à respiração."},
+kn:{origin:"Tradições meditativas budistas com mais de 2.500 anos, sistematizada no ocidente por Jon Kabat-Zinn em 1979 no programa MBSR.",steps:["Ancoragem na respiração consciente como ponto de partida para o aqui-agora.","Escuta interna das sensações corporais, notando o que surge sem reatividade.","Observação de pensamentos e emoções como nuvens que passam, sem julgamento.","Aceitação gentil do momento presente, exatamente como ele se apresenta."],points:["Respiração como âncora do presente","Sensações táteis e internas do corpo","Fluxo de pensamentos e imagens mentais","Campo emocional e suas variações"],benefits:["Redução significativa de estresse e ansiedade","Maior presença e qualidade na intimidade","Regulação emocional e autocompaixão"]}},
+{id:6,name:"Kunyaza",icon:"fa-cloud-rain",teaser:"A chuva sagrada de Ruanda",
+ch:{type:"memory",pairs:[{t:"Origem",d:"Tradição milenar de Ruanda"},{t:"Significado",d:"'Chuva sagrada' em ruandês"},{t:"Técnica principal",d:"Toque rítmico nos lábios"},{t:"Foco central",d:"Capuz clitoriano em círculos"}]},
+bon:{sit:"Na tradição do Kunyaza, qual atitude é essencial durante o toque rítmico nos lábios?",opts:["Manter continuidade e ritmo, ajustando conforme a resposta, sem interrupções bruscas","Parar abruptamente a cada dez segundos","Usar apenas pressão máxima constante","Mudar de técnica no meio, sem transição"],c:0,exp:"O Kunyaza valoriza a continuidade rítmica e a leitura da resposta do corpo — pausas bruscas rompem a construção sensorial."},
+kn:{origin:"Tradição milenar de Ruanda, África Oriental, conhecida como 'kunyaza' (chuva sagrada). Transmitida oralmente por gerações de mulheres.",steps:["Toque rítmico nos grandes lábios com a ponta dos dedos, alternando direções.","Estimulação do capuz clitoriano em movimentos circulares suaves e contínuos.","Variação de pressão, velocidade e direção conforme a resposta observada.","Continuidade do toque até a resposta completa, sem interrupções bruscas."],points:["Grandes lábios — borda e dobras","Clitóris e capuz — movimentos circulares","Entrada vaginal — ritmo sutil","Períneo e quadril — apoio e conexão"],benefits:["Ampliação intensa do prazer feminino","Conexão com sabedoria ancestral","Liberação de bloqueios emocionais e sexuais"]}},
+{id:7,name:"SUDS",icon:"fa-gauge-high",teaser:"Escala subjetiva de desconforto",
+ch:{type:"decode",scram:"SDUS",ans:"suds",hint:"Escala de desconforto da Terapia Cognitivo-Comportamental"},
+bon:{sit:"No meio da prática, a pessoa nota tensão forte e pensamentos negativos. Ao se autoavaliar na escala SUDS, marca 80 de 100. Qual é a conduta correta?",opts:["Aumentar o estímulo para 'passar rápido' pelo desconforto","Aplicar regulação — respiração e aterramento — e reduzir a intensidade antes de seguir","Ignorar a pontuação; ela não significa nada","Dissociar e continuar no automático"],c:1,exp:"A SUDS existe para orientar a regulação: níveis altos pedem respiração, aterramento e redução da intensidade — prevenindo sobrecarga e dissociação."},
+kn:{origin:"SUDS — Subjective Units of Distress Scale. Desenvolvida na Terapia Cognitivo-Comportamental como ferramenta de autoavaliação.",steps:["Identificação do momento específico de desconforto durante a prática.","Avaliação numérica de 0 (nenhum desconforto) a 100 (máximo suportável).","Monitoramento contínuo da pontuação durante toda a experiência.","Aplicação de técnicas de regulação (respiração, grounding) conforme o nível."],points:["Sensações físicas de ativação do sistema nervoso","Pensamentos automáticos e cognições associadas","Reações emocionais imediatas","Comportamentos de evitação ou fuga"],benefits:["Autoconhecimento emocional preciso","Ferramenta prática e imediata de regulação","Prevenção de sobrecarga e dissociação"]}},
+{id:8,name:"Gouinage",icon:"fa-hand-fist",teaser:"Massagem profunda de origem francesa",
+ch:{type:"multi",q:"Quais elementos fazem parte do protocolo clássico do Gouinage? Selecione todos os corretos:",items:["Aquecimento com deslizamento superficial","Uso obrigatório de pedras quentes","Deslizamento profundo seguindo a direção das fibras musculares","Pressão direta em pontos de tensão, respeitando o limite do receptor","Torções articulares com força máxima","Finalização suave com movimentos integrativos"],correct:[0,2,3,5]},
+bon:{sit:"Durante um Gouinage, o receptor contrai o corpo e pede 'um momento' em tom de desconforto. Qual é a melhor conduta?",opts:["Reduzir a pressão imediatamente e seguir no ritmo dele","Aproveitar que ele está 'aquecido' e intensificar","Seguir igual, porque dor faz parte","Trocar de técnica sem explicar o motivo"],c:0,exp:"Respeitar o limite do receptor é princípio da técnica: a pressão se ajusta ao feedback, sempre."},
+kn:{origin:"Técnica francesa de massagem profunda. Foco em liberar tensões crônicas nas camadas mais profundas dos tecidos.",steps:["Aquecimento com deslizamento superficial para preparação dos tecidos.","Deslizamento profundo seguindo a direção das fibras musculares.","Pressão direta em pontos de tensão específicos, respeitando o limite do receptor.","Finalização suave com movimentos integrativos e harmonizantes."],points:["Camadas musculares profundas","Fáscias e septos intermusculares","Inserções ósseas e tendinosas","Zonas de reflexo e pontos gatilho"],benefits:["Liberação de aderências fasciais","Melhora significativa da circulação local","Alívio eficaz de dor crônica"]}},
+{id:9,name:"Taoísmo Sexual",icon:"fa-yin-yang",teaser:"Cultivo da energia vital",
+ch:{type:"seq",items:["Cultivo da energia vital (Qi) pela respiração","Circulação pela Órbita Microcósmica","Retenção e transmutação da energia","Harmonização dos princípios Yin e Yang"]},
+bon:{sit:"Um estudante taoísta pergunta por que praticar a Órbita Microcósmica. Qual é a melhor resposta?",opts:["Para circular o Qi pelos meridianos Ren Mai e Du Mai, cultivando e transmutando a energia vital","Para aquecer os músculos antes do treino","Para acelerar o coração de propósito","Para substituir o sono"],c:0,exp:"A Órbita Microcósmica circula a energia pelos meridianos Ren Mai e Du Mai — núcleo do cultivo taoísta de vitalidade."},
+kn:{origin:"China antiga, com mais de 2.000 anos. Textos como 'Su Nü Ching' fundamentam a prática taoísta da sexualidade como caminho de longevidade.",steps:["Cultivo da energia vital (Qi) através de respiração profunda e consciente.","Circulação interna pela Órbita Microcósmica (meridianos Ren Mai e Du Mai).","Retenção e transmutação da energia seminal em energia espiritual.","Harmonização dos princípios Yin (receptivo) e Yang (ativo) no corpo."],points:["Dantian inferior — centro energético raiz","Dantian médio e superior — centros emocional e mental","Meridianos Ren Mai e Du Mai — circulação interna","Pontos de acupuntura sexuais específicos"],benefits:["Vitalidade aumentada e potencial longevidade","Equilíbrio energético sistêmico","Controle consciente sobre a energia sexual"]}},
+{id:10,name:"Massagem Tântrica",icon:"fa-om",teaser:"Conexão corpo-mente-espírito",
+ch:{type:"match",pairs:[{t:"Idade",d:"Mais de 5.000 anos"},{t:"Origem",d:"Tradições tântricas da Índia"},{t:"Base",d:"Corpo, mente e espírito integrados"},{t:"Foco",d:"Ativação dos chakras principais"}]},
+bon:{sit:"Antes de uma massagem tântrica, o casal quer criar o 'espaço sagrado'. O que isso envolve na prática?",opts:["Intenção clara, respeito mútuo e respiração conjunta para alinhar as energias","Televisão ligada para relaxar","Começar direto pela técnica final, sem preparação","Silêncio rígido, sem qualquer comunicação"],c:0,exp:"O espaço sagrado combina intenção, respeito e respiração sincronizada — a base para o toque consciente e a ativação dos chakras."},
+kn:{origin:"Tradições tântricas da Índia com mais de 5.000 anos. O Tantra vê o corpo como templo sagrado e a sexualidade como caminho de expansão da consciência.",steps:["Criação de espaço sagrado com intenção clara e respeito mútuo.","Respiração conjunta e sincronizada para alinhar as energias.","Toque consciente e presente por todo o corpo, sem pressa nem objetivo.","Ativação progressiva dos centros energéticos (chakras) pelo toque.","Integração e compartilhamento da experiência energética alcançada."],points:["Sete chakras principais ao longo da coluna","Linhas de energia (nadis) Ida, Pingala e Sushumna","Todo o corpo como templo sagrado","Campo áurico e presença energética"],benefits:["Expansão profunda da consciência","Cura emocional e liberação de traumas","Conexão transcendente consigo e com o outro"]}},
+{id:11,name:"Yoni",icon:"fa-spa",teaser:"Massagem sagrada feminina",
+ch:{type:"decode",scram:"INYO",ans:"yoni",hint:"Sânscrito para 'espaço sagrado'"},
+bon:{sit:"Qual é o pré-requisito inegociável antes de iniciar uma massagem yoni?",opts:["Consentimento claro e limites combinados","Pressa para chegar à região sagrada","Música alta para distrair a atenção","Começar direto, sem preparo do corpo"],c:0,exp:"Sem consentimento claro e limites combinados, não há prática: a reverência ao espaço sagrado começa pela palavra."},
+kn:{origin:"Do sânscrito 'yoni' (espaço sagrado, origem, fonte). Tradições tântricas que reverenciam a anatomia feminina como manifestação do divino.",steps:["Preparação do espaço e estabelecimento claro de consentimento e limites.","Massagem corporal completa para relaxamento profundo e confiança.","Abordagem yoni com reverência, presença e respeito total ao ritmo da receptora.","Técnicas de liberação e despertar, seguindo a resposta do corpo.","Integração emocional e acolhimento de tudo que surgir durante a prática."],points:["Monte de Vênus e púbis — ancoragem","Grandes e pequenos lábios — camadas externas","Clitóris e períneo — centros de sensibilidade","Paredes vaginais e ponto G — regiões internas"],benefits:["Liberação de traumas armazenados no corpo","Reconexão profunda com a sexualidade feminina","Empoderamento e autoconhecimento pleno"]}},
+{id:12,name:"Shiatsul",icon:"fa-hand-point-up",teaser:"Shiatsu com técnicas específicas",
+ch:{type:"tf",st:"No Shiatsul, o 'hara' é o centro vital avaliado no abdômen e serve de bússola energética para a sessão.",c:true,exp:"Correto: o hara (abdômen) é o centro vital do qual parte a leitura energética no Shiatsu."},
+bon:{sit:"Ao pressionar os meridianos com os polegares, o receptor prende a respiração e enrijece. Qual é o ajuste ideal no Shiatsul?",opts:["Manter a pressão fixa até ele acostumar","Soltar a pressão, convidar à respiração e retomar gradualmente","Usar os cotovelos com mais força","Pular direto para os alongamentos"],c:1,exp:"A pressão rítmica do Shiatsu dialoga com a respiração: soltar e retomar mantém o fluxo de Qi sem bloqueios."},
+kn:{origin:"Fusão japonesa contemporânea do Shiatsu tradicional com técnicas específicas de liberação, criando abordagem holística de trabalho corporal.",steps:["Avaliação energética pelo hara (centro vital no abdômen).","Pressão rítmica ao longo dos 12 meridianos principais com polegares e palmas.","Alongamentos assistidos e mobilizações articulares suaves.","Técnicas específicas de liberação em áreas de tensão concentrada.","Harmonização final com toques suaves para integrar a sessão."],points:["12 meridianos principais do corpo","Tsubos — pontos de acupressão específicos","Hara — centro vital abdominal","Regiões de tensão acumulada crônica"],benefits:["Equilíbrio do fluxo energético global","Alívio eficaz de tensões musculares","Melhora da circulação, digestão e sono"]}},
+{id:13,name:"Nuru",icon:"fa-droplet",teaser:"Massagem corpo a corpo com gel",
+ch:{type:"seq",items:["Preparação do gel Nuru com água morna","Aquecimento corporal mútuo e contato inicial","Deslizamento corpo a corpo com o gel","Finalização com toques suaves e integração"]},
+bon:{sit:"Durante o deslizamento do Nuru, a pessoa receptora sente frio e tensiona o corpo. Qual é o melhor ajuste?",opts:["Aquecer o ambiente, reaquecer o gel e retomar com movimentos lentos","Aplicar mais gel frio e acelerar o ritmo","Continuar igual, o frio passa sozinho","Encerrar sessões de Nuru para sempre"],c:0,exp:"Conforto térmico e ritmo lento são essenciais no corpo a corpo: gel morno, ambiente aquecido e deslizamento gradual devolvem a entrega."},
+kn:{origin:"Japão, 'nuru' significa escorregadio. O gel é originário de algas marinhas nori, criando textura única para deslizamento corpo a corpo.",steps:["Preparação do gel Nuru com água morna até a consistência ideal.","Aquecimento corporal mútuo e estabelecimento do contato inicial consciente.","Deslizamento corpo a corpo com o gel, explorando diferentes ângulos e pressões.","Variação de pressão e angulação para alcançar diferentes camadas musculares.","Finalização com toques suaves e integração da experiência."],points:["Todo o corpo — contato pele a pele integral","Costas e coluna — deslizamento principal","Regiões de maior tensão muscular","Extremidades e articulações — finalização"],benefits:["Sensação profunda de união e entrega mútua","Hidratação intensa e nutrição da pele","Relaxamento muscular profundo e completo"]}},
+{id:14,name:"Lingam",icon:"fa-sun",teaser:"Massagem sagrada masculina",
+ch:{type:"memory",pairs:[{t:"Significado",d:"Símbolo de criação divina"},{t:"Origem",d:"Sânscrito, tradições tântricas"},{t:"Abordagem",d:"Consciência e reverência"},{t:"Benefício-chave",d:"Controle ejaculatório"}]},
+bon:{sit:"Na massagem lingam, ao sentir o ponto de 'não retorno', qual recurso tântrico ajuda no controle?",opts:["Retenção consciente com respiração profunda e transmutação da energia","Prender a respiração e tensionar todo o corpo","Acelerar o movimento até o limite","Interromper a sessão de forma brusca"],c:0,exp:"As técnicas de retenção consciente com respiração profunda permitem expandir a energia sem perder o controle — núcleo do benefício da prática."},
+kn:{origin:"Do sânscrito 'lingam' (símbolo de criação, divindade, pilar). Tradições tântricas que honram a energia masculina como expressão do sagrado.",steps:["Definição de intenção e criação de espaço seguro e sagrado.","Massagem corporal completa preparatória para relaxamento e confiança.","Abordagem lingam com consciência, reverência e respeito ao ritmo do receptor.","Técnicas de controle e expansão energética, incluindo retenção consciente.","Integração e compartilhamento da energia cultivada durante a prática."],points:["Base e raiz do lingam — ancoragem","Eixo e corpo — superfície e profundidade","Glande e coroa — sensibilidade máxima","Períneo e pontos internos — controle energético"],benefits:["Controle ejaculatório consciente e voluntário","Liberação de tensões emocionais armazenadas","Reconexão saudável com a masculinidade sagrada"]}},
+{id:15,name:"Aquática",icon:"fa-water",teaser:"Massagem terapêutica na água",
+ch:{type:"decode",scram:"ATIUQCA",ans:"aquatica",hint:"Massagem realizada em ambiente aquático"},
+bon:{sit:"Na primeira sessão de massagem aquática, a pessoa está insegura na água. Qual é o primeiro passo?",opts:["Adaptação gradual com suporte seguro, construindo confiança","Soltar a pessoa no meio da piscina para 'encarar o medo'","Começar por alongamentos profundos em flutuação total","Elevar a temperatura da água ao máximo"],c:0,exp:"A adaptação gradual com suporte é o protocolo: confiança e segurança precedem qualquer flutuação ou alongamento."},
+kn:{origin:"Desenvolvida a partir do Watsu, criado por Harold Dull em 1980 na Califórnia, combinando Zen Shiatsu com os benefícios da água morna.",steps:["Adaptação gradual ao ambiente aquático, estabelecendo confiança e segurança.","Flutuação com suporte do terapeuta, permitindo ao corpo soltar-se completamente.","Movimentos de alongamento passivo aproveitando a ausência de gravidade.","Trabalho de pontos de tensão com o corpo em flutuação livre.","Integração com movimentos suaves, respiração e retorno à borda."],points:["Coluna vertebral — descompressão na água","Articulações — mobilidade sem impacto","Músculos sob flutuação — relaxamento profundo","Sistema nervoso — efeito calmante da água morna"],benefits:["Liberação total do peso corporal","Mobilidade articular sem impacto ou dor","Relaxamento neuromuscular profundo e rápido"]}}
+];
+const PH={
+wrong:["Hmm... a ciência é exata, meu caro.","Essa foi por pouco. Ou por muito longe.","Se fosse fácil, não seria uma missão.","O mapa é claro. Ler ajuda.","Não é bem isso, mas a tentativa foi corajosa.","Errou. Mas errou com convicção.","Quase lá. 'Quase' sendo relativo.","A resposta certa está gritando. Não ouviu?","Tente de novo. Dessa vez com os olhos abertos.","Isso aí não cola nem com cola quente.","A ciência chora. Tente de novo.","Resposta ousada. Incorreta, mas ousada.","Estatisticamente, você acerta a próxima. Talvez.","A sabedoria está a um clique. Literalmente."],
+correct:["Assim se faz. Sabedoria desbloqueada.","Impressionante. Quase como se tivesse estudado.","A coroa pesa, mas fica bem em você.","Mais um selo. O tesouro se aproxima.","Certo como relógio suíço.","Até que enfim alguém digno.","Acertou. Pode comemorar. Moderadamente.","Inteligência verificada. Próximo.","Sabe de uma coisa? Você é perigoso assim.","Acertou de novo. Estou criando expectativas.","Isso foi bonito de ver.","Cérebro funcionando. Confirmado."],
+locked:["Calma, aventureiro. Um passo de cada vez.","Paciência é uma virtude. Tente a anterior.","Não pule etapas. A jornada tem ritmo.","Trancado. Como o seu coração às vezes.","Essa porta não é pra você. Ainda.","Tem um selo esperando antes desse.","O mapa tem ordem. Não é sugestão.","Respire. A jornada não foge."],
+unlock:["Novo território desbloqueado. Use com sabedoria.","A porta se abriu. Entrou sozinho?","Desbloqueado. Agora não tem volta.","Mais uma porta. Mais um mistério.","O mapa se revela. Continue.","Território novo no mapa. Aproveite."],
+complete:["Todos os selos. Todos os conhecimentos. Respeito.","Você completou a jornada. Nem eu esperava.","Mestre dos territórios. A coroa é sua.","Incrível. Até eu fiquei impressionado.","16 selos. Um mestre. Fim de papo.","Lenda confirmada em tempo real."],
+idle:["Clicou em mim? Sem vergonha...","Estou aqui observando. Sem pressão.","O conhecimento não cai do céu. Vá buscar.","Enquanto isso, eu fico bonito aqui.","Já pensou em tentar uma missão?","A vida é curta. O mapa é grande.","Eu sei as respostas. Não vou contar.","Você vai ficar aí parado? Sério?","Cada missão é um mundo. Literalmente.","Tá difícil? Tenta respirar fundo.","Sou o único que te aguenta nessa jornada.","Se eu pudesse rolar os olhos, rolaria agora.","Psst... os selos não desvendam sozinhos.","Dica: leia as opções antes de clicar.","XP não nasce em árvore. Vá às missões.","O mapa evolui com você. Sério."],
+knowledge:["Anotou tudo? Vai cobrar depois.","Conhecimento é poder. Use com responsabilidade.","Isso aí vale mais que um curso inteiro.","Guarde bem. Pode precisar um dia.","Sabedoria gratuita. Raro nos dias de hoje.","Leia com calma. Prática consciente é prática segura.","Volte sempre que precisar relembrar.","Conhecimento integrado é conhecimento vivo."],
+bonok:["Ótima leitura da situação. XP bônus garantido.","Sensibilidade apurada. O corpo fala — você ouviu.","Exatamente o que um praticante consciente faria.","Consciência em ação. Bonito de ver."],
+bonno:["Não era a melhor conduta, mas a reflexão conta.","Situação delicada: a resposta segura era outra.","Nessa, o cuidado vencia. Anote a lição.","Respeitar o ritmo é sempre o caminho."]
+};
+const LV=[
+{xp:0,t:"Iniciado"},{xp:70,t:"Explorador"},{xp:150,t:"Aprendiz do Sagrado"},{xp:250,t:"Cartógrafo"},
+{xp:360,t:"Guardião dos Selos"},{xp:480,t:"Alquimista"},{xp:620,t:"Mestre dos Rituais"},
+{xp:760,t:"Lenda do Mapa"},{xp:900,t:"Iluminado do Sagrado"}
+];
+const ACH=[
+{id:"p1",n:"Primeiro Passo",d:"Complete o primeiro território",ic:"fa-shoe-prints"},
+{id:"s5",n:"Cinco Selos",d:"Desvende 5 selos",ic:"fa-certificate"},
+{id:"s10",n:"Meio Caminho",d:"Desvende 10 selos",ic:"fa-award"},
+{id:"all",n:"Mestre do Mapa",d:"Desvende todos os 16 selos",ic:"fa-crown"},
+{id:"cmb",n:"Chama Acesa",d:"Atinja um combo x5",ic:"fa-fire"},
+{id:"perf",n:"Impecável",d:"Complete um desafio sem erros",ic:"fa-gem"},
+{id:"bon",n:"Alma Curiosa",d:"Resolva 8 situações práticas",ic:"fa-lightbulb"},
+{id:"clk",n:"Provocador",d:"Clique no mascote 10 vezes",ic:"fa-hand-pointer"}
+];
+const CC={0:"#ff5e9c",1:"#ff5e9c",2:"#ff5e9c",6:"#ff5e9c",3:"#3ce0d8",5:"#3ce0d8",7:"#3ce0d8",4:"#ffa94d",8:"#ffa94d",12:"#ffa94d",13:"#ffa94d",15:"#ffa94d",9:"#a06bff",10:"#a06bff",11:"#a06bff",14:"#a06bff"};
+/* ===== METADADOS DAS CONSTELAÇÕES (v3) ===== */
+const TR=[
+{id:'toque',name:'Toque',full:'Constelação do Toque',color:0xff4d8d,css:'#ff4d8d',icon:'fa-hand-sparkles',mis:[0,1,2,6]},
+{id:'mente',name:'Mente',full:'Constelação da Mente',color:0x22e0d8,css:'#22e0d8',icon:'fa-brain',mis:[3,5,7]},
+{id:'corpo',name:'Corpo',full:'Constelação do Corpo',color:0xffb14d,css:'#ffb14d',icon:'fa-hands',mis:[4,8,12,13,15]},
+{id:'sagrado',name:'Sagrado',full:'Constelação do Sagrado',color:0xa06bff,css:'#a06bff',icon:'fa-star-and-crescent',mis:[9,10,11,14]}
+];
+const ORDER=[0,1,2,6,3,5,7,4,8,12,13,15,9,10,11,14];
+function trOf(id){return TR.find(t=>t.mis.includes(id))}
+function idxInTr(id){const t=trOf(id);return t.mis.indexOf(id)}
+function seloNum(id){return ORDER.indexOf(id)+1}
+/* regras de desbloqueio: constelação c aberta se todas as anteriores completas */
+function trOpen(ti){for(let k=0;k<ti;k++){for(const m of TR[k].mis)if(!done.has(m))return false}return true}
+function isAvail(id){const t=trOf(id),ti=TR.indexOf(t);if(!trOpen(ti))return false;const ix=t.mis.indexOf(id);for(let k=0;k<ix;k++)if(!done.has(t.mis[k]))return false;return true}
+function trDone(ti){return TR[ti].mis.every(m=>done.has(m))}
+function firstAvail(){for(const id of ORDER)if(isAvail(id))return id;return -1}
+</script>
+<script>
+/* ================= MOTOR DE ÁUDIO (Web Audio API, 100% sintetizado) ================= */
+const AU={ctx:null,sg:null,mg:null,echo:null,mus:false,sfx:true,mTimer:null,mStep:0,intensity:0};
+const CH=[[220,277.18,329.63,440],[174.61,220,261.63,349.23],[196,246.94,293.66,392],[164.81,207.65,261.63,329.63]];
+const PENTA=[523.25,587.33,659.25,783.99,880,1046.5];
+function auInit(){
+  if(AU.ctx){if(AU.ctx.state==='suspended')AU.ctx.resume();return}
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+    AU.ctx=new C();
+    AU.sg=AU.ctx.createGain();AU.sg.gain.value=.9;AU.sg.connect(AU.ctx.destination);
+    AU.mg=AU.ctx.createGain();AU.mg.gain.value=0;AU.mg.connect(AU.ctx.destination);
+    AU.echo=AU.ctx.createDelay(1.4);AU.echo.delayTime.value=.4;
+    const fb=AU.ctx.createGain();fb.gain.value=.32;
+    const ewet=AU.ctx.createGain();ewet.gain.value=.4;
+    AU.echo.connect(fb);fb.connect(AU.echo);AU.echo.connect(ewet);ewet.connect(AU.mg);
+    if(AU.mus)startMusic();
+  }catch(e){}
+}
+function tone(o){
+  if(!AU.ctx||!AU.sfx)return;
+  const c=AU.ctx,osc=c.createOscillator(),gn=c.createGain(),now=c.currentTime+(o.t||0);
+  osc.type=o.type||'sine';osc.frequency.setValueAtTime(o.f,now);
+  if(o.f2)osc.frequency.exponentialRampToValueAtTime(Math.max(20,o.f2),now+o.d);
+  gn.gain.setValueAtTime(.0001,now);
+  gn.gain.exponentialRampToValueAtTime(o.g||.14,now+(o.a||.012));
+  gn.gain.exponentialRampToValueAtTime(.0001,now+o.d);
+  osc.connect(gn);gn.connect(AU.sg);
+  if(o.echo)gn.connect(AU.echo);
+  osc.start(now);osc.stop(now+o.d+.08);
+}
+function mTone(o){
+  if(!AU.ctx)return;
+  const c=AU.ctx,osc=c.createOscillator(),gn=c.createGain(),now=c.currentTime+(o.t||0);
+  osc.type=o.type||'sine';osc.frequency.setValueAtTime(o.f,now);
+  if(o.f2)osc.frequency.exponentialRampToValueAtTime(Math.max(20,o.f2),now+o.d);
+  gn.gain.setValueAtTime(.0001,now);
+  gn.gain.exponentialRampToValueAtTime(o.g||.1,now+(o.a||.04));
+  gn.gain.exponentialRampToValueAtTime(.0001,now+o.d);
+  osc.connect(gn);gn.connect(AU.mg);
+  if(o.echo)gn.connect(AU.echo);
+  osc.start(now);osc.stop(now+o.d+.08);
+}
+function noise(o){
+  if(!AU.ctx||!AU.sfx)return;
+  const c=AU.ctx,len=Math.max(1,c.sampleRate*o.d),buf=c.createBuffer(1,len,c.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  const src=c.createBufferSource();src.buffer=buf;
+  const f=c.createBiquadFilter();f.type=o.ft||'bandpass';f.frequency.setValueAtTime(o.f||900,now());
+  if(o.f2)f.frequency.exponentialRampToValueAtTime(Math.max(40,o.f2),now()+o.d);
+  f.Q.value=o.q||.8;
+  const gn=c.createGain();gn.gain.setValueAtTime(.0001,now());
+  gn.gain.exponentialRampToValueAtTime(o.g||.12,now()+(o.a||.02));
+  gn.gain.exponentialRampToValueAtTime(.0001,now()+o.d);
+  src.connect(f);f.connect(gn);gn.connect(AU.sg);src.start();src.stop(now()+o.d+.05);
+  function now(){return c.currentTime+(o.t||0)}
+}
+function sfx(k){
+  if(!AU.ctx||!AU.sfx)return;
+  switch(k){
+    case 'click':tone({f:620,f2:880,d:.09,g:.07,type:'triangle'});break;
+    case 'hover':tone({f:1180,d:.06,g:.028,type:'sine'});break;
+    case 'flip':tone({f:340,f2:640,d:.1,g:.06,type:'triangle'});break;
+    case 'correct':[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone({f,d:.32,g:.11,type:'sine',t:i*.07,echo:true}));tone({f:261.63,d:.4,g:.05,type:'triangle'});break;
+    case 'wrong':tone({f:220,f2:150,d:.4,g:.12,type:'sawtooth'});tone({f:155,f2:110,d:.45,g:.09,type:'square',t:.05});break;
+    case 'coin':tone({f:987.77,d:.09,g:.1,type:'square'});tone({f:1318.51,d:.22,g:.1,type:'square',t:.09});break;
+    case 'unlock':[392,523.25,659.25,880].forEach((f,i)=>tone({f,d:.5,g:.1,type:'sine',t:i*.1,echo:true}));noise({f:600,f2:3800,d:.6,g:.06,a:.3});break;
+    case 'whoosh':noise({f:400,f2:2400,d:.32,g:.05,a:.12});break;
+    case 'fly':noise({f:300,f2:1900,d:.9,g:.07,a:.35});tone({f:180,f2:520,d:.9,g:.04,type:'sine'});break;
+    case 'level':[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone({f,d:.55,g:.11,type:'triangle',t:i*.09,echo:true}));noise({f:2000,f2:5200,d:.8,g:.05,a:.3,t:.1});break;
+    case 'bell':tone({f:1568,d:.8,g:.09,type:'sine',echo:true});tone({f:2349,d:.6,g:.045,type:'sine',t:.02,echo:true});break;
+    case 'match':tone({f:784,d:.14,g:.08,type:'sine'});tone({f:1175,d:.24,g:.08,type:'sine',t:.1,echo:true});break;
+    case 'tick':tone({f:1040,d:.05,g:.04,type:'square'});break;
+    case 'boom':noise({f:120,f2:40,d:.7,g:.22,ft:'lowpass',a:.01});tone({f:70,f2:38,d:.7,g:.2,type:'sine'});break;
+    case 'star':tone({f:1318.5,f2:2093,d:.5,g:.06,type:'sine',echo:true});tone({f:659.25,d:.3,g:.04,type:'triangle'});break;
+    case 'shake':noise({f:180,f2:90,d:.25,g:.1,ft:'lowpass'});break;
+  }
+}
+/* ===== música ambiente em camadas ===== */
+function startMusic(){
+  if(!AU.ctx||AU.mTimer)return;
+  AU.mg.gain.cancelScheduledValues(AU.ctx.currentTime);
+  AU.mg.gain.setValueAtTime(AU.mg.gain.value,AU.ctx.currentTime);
+  AU.mg.gain.linearRampToValueAtTime(.34,AU.ctx.currentTime+2.5);
+  AU.mStep=0;
+  AU.mTimer=setInterval(musicBeat,1350);
+}
+function stopMusic(){
+  if(!AU.mTimer)return;
+  clearInterval(AU.mTimer);AU.mTimer=null;
+  if(AU.ctx){AU.mg.gain.cancelScheduledValues(AU.ctx.currentTime);AU.mg.gain.setValueAtTime(AU.mg.gain.value,AU.ctx.currentTime);AU.mg.gain.linearRampToValueAtTime(0,AU.ctx.currentTime+1.2)}
+}
+function musicBeat(){
+  if(!AU.ctx||document.hidden)return;
+  const s=AU.mStep++,bar=Math.floor(s/4)%4,ch=CH[bar];
+  if(s%4===0){ch.forEach(f=>mTone({f,d:5.4,g:.028,type:'sine',a:1.4}));mTone({f:ch[0]/2,d:5.4,g:.03,type:'triangle',a:1.4})}
+  if(AU.intensity>=1&&s%2===1){const n=PENTA[Math.floor(Math.random()*PENTA.length)];mTone({f:n,d:1.6,g:.02,type:'sine',echo:true,a:.01})}
+  if(AU.intensity>=2&&s%4===2){const n=PENTA[Math.floor(Math.random()*3)+2];mTone({f:n*2,d:2.2,g:.012,type:'sine',echo:true,a:.02})}
+  if(AU.intensity>=3&&s%8===6){mTone({f:PENTA[4],d:2.8,g:.016,type:'sine',echo:true});mTone({f:PENTA[1],d:2.8,g:.014,type:'sine',t:.4,echo:true})}
+}
+function togMus(){
+  AU.mus=!AU.mus;save();
+  document.getElementById('musT').classList.toggle('off',!AU.mus);
+  if(AU.mus){auInit();startMusic()}else stopMusic();
+  sfx('click');
+}
+function togSfx(){
+  AU.sfx=!AU.sfx;save();
+  document.getElementById('sfxT').classList.toggle('off',!AU.sfx);
+  if(AU.sfx){auInit();sfx('click')}
+}
+/* ================= LUMEN — MASCOTE 3D ================= */
+const LM={mx:0,my:0,inst:null};
+addEventListener('pointermove',e=>{LM.mx=(e.clientX/innerWidth)*2-1;LM.my=(e.clientY/innerHeight)*2-1},{passive:true});
+function glowTex(inner,outer){
+  const cv=document.createElement('canvas');cv.width=cv.height=128;
+  const cx=cv.getContext('2d');
+  const g=cx.createRadialGradient(64,64,2,64,64,62);
+  g.addColorStop(0,inner);g.addColorStop(1,outer);
+  cx.fillStyle=g;cx.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(cv);
+}
+function buildLumen(canvas){
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  const scene=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(38,1,.1,50);cam.position.set(0,0,7.2);
+  scene.add(new THREE.AmbientLight(0xbfa8ff,.9));
+  const pl=new THREE.PointLight(0xffd166,1.1,30);pl.position.set(3,4,6);scene.add(pl);
+  const pl2=new THREE.PointLight(0x22e0d8,.5,30);pl2.position.set(-4,-2,4);scene.add(pl2);
+
+  const G=new THREE.Group();scene.add(G);
+  /* corpo com gradiente + rim */
+  const bodyMat=new THREE.ShaderMaterial({
+    uniforms:{cA:{value:new THREE.Color(0xc9a2ff)},cB:{value:new THREE.Color(0x5b2bd6)},rim:{value:new THREE.Color(0xffd166)}},
+    vertexShader:'varying vec3 vN;varying vec3 vP;void main(){vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vP=mv.xyz;gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'varying vec3 vN;varying vec3 vP;uniform vec3 cA;uniform vec3 cB;uniform vec3 rim;void main(){float h=clamp(vN.y*.5+.5,0.,1.);vec3 col=mix(cB,cA,h);float f=pow(1.-abs(dot(normalize(vN),normalize(-vP))),2.2);col+=rim*f*.55;gl_FragColor=vec4(col,1.);}'
+  });
+  const body=new THREE.Mesh(new THREE.SphereGeometry(1.5,48,48),bodyMat);G.add(body);
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex('rgba(200,150,255,.85)','rgba(120,60,255,0)'),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
+  glow.scale.set(5.6,5.6,1);G.add(glow);
+  /* anel orbital dourado */
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(2.05,.05,10,60),new THREE.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.85}));
+  ring.rotation.x=1.25;G.add(ring);
+  const ring2=new THREE.Mesh(new THREE.TorusGeometry(2.35,.028,10,60),new THREE.MeshBasicMaterial({color:0x22e0d8,transparent:true,opacity:.4}));
+  ring2.rotation.x=1.9;ring2.rotation.y=.5;G.add(ring2);
+  /* faíscas orbitando */
+  const sN=26,sGeo=new THREE.BufferGeometry(),sPos=new Float32Array(sN*3),sDat=[];
+  for(let i=0;i<sN;i++){sDat.push({r:1.9+Math.random()*1.1,a:Math.random()*6.283,s:.4+Math.random()*1.2,y:(Math.random()-.5)*2.4,v:.3+Math.random()*.8})}
+  sGeo.setAttribute('position',new THREE.BufferAttribute(sPos,3));
+  const sparks=new THREE.Points(sGeo,new THREE.PointsMaterial({color:0xffe9b0,size:.09,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false}));
+  G.add(sparks);
+  /* olhos */
+  const FACE=new THREE.Group();G.add(FACE);
+  function mkEye(x){
+    const e=new THREE.Group();
+    const w=new THREE.Mesh(new THREE.SphereGeometry(.34,24,24),new THREE.MeshBasicMaterial({color:0xffffff}));
+    const p=new THREE.Mesh(new THREE.SphereGeometry(.17,20,20),new THREE.MeshBasicMaterial({color:0x1a0f33}));
+    p.position.z=.21;
+    const hl=new THREE.Mesh(new THREE.SphereGeometry(.05,10,10),new THREE.MeshBasicMaterial({color:0xffffff}));
+    hl.position.set(.07,.08,.31);
+    e.add(w,p,hl);e.position.set(x,.3,1.3);FACE.add(e);
+    return e;
+  }
+  const eL=mkEye(-.5),eR=mkEye(.5);
+  /* sobrancelhas */
+  function mkBrow(x){const b=new THREE.Mesh(new THREE.BoxGeometry(.4,.075,.07),new THREE.MeshBasicMaterial({color:0x3d2470}));b.position.set(x,.78,1.32);FACE.add(b);return b}
+  const bL=mkBrow(-.5),bR=mkBrow(.5);
+  /* bocas pré-construídas */
+  const mouths={};
+  const smile=new THREE.Mesh(new THREE.TorusGeometry(.3,.055,8,20,Math.PI),new THREE.MeshBasicMaterial({color:0x2a1445}));
+  smile.rotation.z=Math.PI;mouths.smile=smile;
+  const big=new THREE.Mesh(new THREE.TorusGeometry(.38,.07,8,20,Math.PI),new THREE.MeshBasicMaterial({color:0x2a1445}));
+  big.rotation.z=Math.PI;mouths.big=big;
+  const frown=new THREE.Mesh(new THREE.TorusGeometry(.28,.055,8,20,Math.PI),new THREE.MeshBasicMaterial({color:0x2a1445}));
+  frown.rotation.z=0;frown.position.y=-.62;mouths.frown=frown;
+  const flat=new THREE.Mesh(new THREE.BoxGeometry(.44,.06,.05),new THREE.MeshBasicMaterial({color:0x2a1445}));
+  flat.position.y=-.45;mouths.flat=flat;
+  const oh=new THREE.Mesh(new THREE.TorusGeometry(.13,.05,8,18),new THREE.MeshBasicMaterial({color:0x2a1445}));
+  oh.position.y=-.45;mouths.oh=oh;
+  const smirk=new THREE.Mesh(new THREE.TorusGeometry(.3,.055,8,20,Math.PI*.8),new THREE.MeshBasicMaterial({color:0x2a1445}));
+  smirk.rotation.z=Math.PI*1.06;smirk.position.x=.08;mouths.smirk=smirk;
+  Object.values(mouths).forEach(m=>{m.position.y=m.position.y||-.4;m.position.z=m.position.z||1.3;m.visible=false;FACE.add(m)});
+  /* bochechas */
+  const chMat=new THREE.MeshBasicMaterial({color:0xff6ba9,transparent:true,opacity:.5});
+  const cL=new THREE.Mesh(new THREE.CircleGeometry(.17,20),chMat),cR=cL.clone();
+  cL.position.set(-.88,-.12,1.16);cR.position.set(.88,-.12,1.16);
+  cL.lookAt(0,0,7);cR.lookAt(0,0,7);FACE.add(cL,cR);
+
+  const M={cur:'neutral',until:0,blinkT:performance.now()+1800,blinkP:0,hip:0,defMouth:'smile',defBrow:0,excite:0,rotY:0,rotX:0};
+  function hideMouths(){Object.values(mouths).forEach(m=>m.visible=false)}
+  function emote(k){
+    M.cur=k;bL.rotation.z=0;bR.rotation.z=0;bL.position.y=.78;bR.position.y=.78;
+    eL.scale.set(1,1,1);eR.scale.set(1,1,1);FACE.position.y=0;
+    hideMouths();
+    switch(k){
+      case 'happy':mouths.big.visible=true;M.defBrow=.12;bL.position.y=bR.position.y=.84;M.excite=.6;break;
+      case 'celebrate':mouths.big.visible=true;bL.position.y=bR.position.y=.88;bL.rotation.z=-.22;bR.rotation.z=.22;M.excite=1.4;break;
+      case 'sad':mouths.frown.visible=true;bL.rotation.z=.3;bR.rotation.z=-.3;bL.position.y=bR.position.y=.68;FACE.position.y=-.06;break;
+      case 'think':mouths.flat.visible=true;bL.rotation.z=-.34;bL.position.y=.86;bR.rotation.z=.12;M.defBrow=0;break;
+      case 'sassy':mouths.smirk.visible=true;bL.rotation.z=.16;bR.rotation.z=-.28;eL.scale.y=.62;eR.scale.y=.62;break;
+      case 'wink':mouths.smirk.visible=true;eL.scale.y=.06;bR.position.y=.85;break;
+      case 'wow':mouths.oh.visible=true;bL.position.y=bR.position.y=.9;eL.scale.set(1.18,1.18,1);eR.scale.set(1.18,1.18,1);M.excite=.4;break;
+      case 'mock':mouths.smirk.visible=true;bL.rotation.z=-.14;bR.rotation.z=.3;eR.scale.y=.5;break;
+      default:mouths.smile.visible=true;
+    }
+  }
+  function resize(){
+    const w=canvas.clientWidth||158,h=canvas.clientHeight||158;
+    renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();
+  }
+  resize();addEventListener('resize',resize);
+  let wob=0;
+  function frame(t){
+    const dt=1/60;
+    /* piscada */
+    if(t>M.blinkT){M.blinkP=1;M.blinkT=t+2200+Math.random()*3200}
+    if(M.blinkP>0){M.blinkP=Math.max(0,M.blinkP-dt*7);
+      const cl=Math.sin(Math.min(1,M.blinkP)*Math.PI);
+      if(M.cur!=='wink')eL.scale.y=Math.max(.06,(M.cur==='sassy'?.62:1))*(1-cl*.94);
+      if(M.cur!=='wink'&&M.cur!=='mock')eR.scale.y=Math.max(.06,(M.cur==='sassy'?.62:1))*(1-cl*.94);
+    }
+    /* flutuar */
+    wob+=dt;
+    G.position.y=Math.sin(wob*1.7)*.14+(M.cur==='sad'?-.1:0);
+    /* excitação (pulo/giro do anel) */
+    if(M.excite>0){M.excite=Math.max(0,M.excite-dt);
+      G.position.y+=Math.abs(Math.sin(wob*14))*.28*M.excite;
+      ring.rotation.z+=dt*9*M.excite;
+    }
+    ring.rotation.z+=dt*.7;ring2.rotation.z-=dt*.45;
+    body.rotation.y=Math.sin(wob*.8)*.06;
+    /* olhar segue ponteiro */
+    const tx=LM.mx*.5,ty=-LM.my*.3;
+    M.rotY+=(tx-M.rotY)*.08;M.rotX+=(ty-M.rotX)*.08;
+    FACE.rotation.y=M.rotY*.55;FACE.rotation.x=M.rotX*.5;
+    G.rotation.y=M.rotY*.25;
+    /* faíscas */
+    const pa=sGeo.attributes.position;
+    for(let i=0;i<sN;i++){const d=sDat[i];d.a+=dt*d.s;
+      pa.setXYZ(i,Math.cos(d.a)*d.r,d.y+Math.sin(wob*1.3+i)*0.18,Math.sin(d.a)*d.r*.6)}
+    pa.needsUpdate=true;
+    glow.material.opacity=.75+Math.sin(wob*2.2)*.12;
+    renderer.render(scene,cam);
+  }
+  emote('neutral');
+  return {cn:canvas,set:emote,frame,resize};
+}
+function lumenLoop(){
+  requestAnimationFrame(lumenLoop);
+  if(document.hidden||!LM.inst)return;
+  try{LM.inst.frame(performance.now())}catch(e){}
+}
+/* ================= GALÁXIA 3D ================= */
+const GL={ok:false,renderer:null,scene:null,cam:null,stars:{},cores:{},glows:{},rings:{},lines:[],labels:[],
+  theta:0,phi:1.1,radius:56,tTheta:0,tPhi:1.1,tRadius:30,tgt:new THREE.Vector3(0,0,0),tTgt:new THREE.Vector3(0,0,0),
+  fly:null,drag:false,moved:0,px:0,py:0,hover:null,idleT:0,nexus:null,nxGlow:null,nxLight:null,nxRings:[],
+  bursts:[],ray:new THREE.Raycaster(),pulse:0,dust:null,starPts:null,onStarClick:null,onLocked:null,openDrawer:false,overview:null};
+
+function clusterPos(ti,j,n){
+  const ang=ti*(Math.PI/2)+Math.PI/4,R=13.5,y0=[1.3,-1.1,.9,-1.5][ti];
+  const spread=1.55,lA=(n===1?0:(j/(n-1)-.5))*spread,lR=2.4+j*.62,lY=Math.sin(j*1.25+ti)*1.5;
+  const bx=Math.cos(lA)*lR,bz=Math.sin(lA)*lR;
+  return new THREE.Vector3(Math.cos(ang)*R+Math.cos(ang+Math.PI/2)*bx, y0+lY, Math.sin(ang)*R+Math.sin(ang+Math.PI/2)*bx);
+}
+function sphCalc(pos,target){
+  const d=new THREE.Vector3().subVectors(pos,target);
+  const r=d.length()||.001,phi=Math.acos(Math.max(-1,Math.min(1,d.y/r))),theta=Math.atan2(d.x,d.z);
+  return {radius:r,phi,theta,tx:target.x,ty:target.y,tz:target.z};
+}
+function flyTo(to,dur,cb){
+  GL.fly={t0:performance.now(),dur,from:{theta:GL.theta,phi:GL.phi,radius:GL.radius,tx:GL.tgt.x,ty:GL.tgt.y,tz:GL.tgt.z},
+    to:{theta:to.theta,phi:to.phi,radius:to.radius,tx:to.tx,ty:to.ty,tz:to.tz},cb};
+}
+function easeC(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
+function setStarState(id){
+  const g=GL.stars[id];if(!g)return;
+  const t=trOf(id),col=t.color;
+  const core=GL.cores[id],glow=GL.glows[id],ring=GL.rings[id];
+  if(done.has(id)){
+    core.material.color.setHex(0xffd166);core.scale.setScalar(1.05);
+    glow.material.map=GL.goldTex;glow.scale.setScalar(4.6);glow.material.opacity=.95;
+    ring.visible=true;g.userData.state='done';
+  }else if(isAvail(id)){
+    core.material.color.setHex(col);core.scale.setScalar(.9);
+    glow.material.map=GL.texes[trOf(id).id];glow.scale.setScalar(3.8);glow.material.opacity=.85;
+    ring.visible=false;g.userData.state='avail';
+  }else{
+    core.material.color.setHex(0x4a4463);core.scale.setScalar(.42);
+    glow.material.opacity=.16;glow.scale.setScalar(2.2);
+    ring.visible=false;g.userData.state='lock';
+  }
+}
+function initGalaxy(){
+  const cv=document.getElementById('gl');
+  let renderer;
+  try{
+    renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+    if(!renderer.getContext())throw 0;
+  }catch(e){document.body.classList.add('nogl');return}
+  GL.ok=true;GL.renderer=renderer;
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setClearColor(0x070312,1);
+  const scene=new THREE.Scene();GL.scene=scene;
+  const cam=new THREE.PerspectiveCamera(55,1,.1,400);GL.cam=cam;
+  scene.add(new THREE.AmbientLight(0x8877bb,.7));
+  const dl=new THREE.DirectionalLight(0xffffff,.6);dl.position.set(10,20,10);scene.add(dl);
+
+  /* texturas de glow por constelação */
+  GL.texes={};GL.goldTex=glowTex('rgba(255,225,150,1)','rgba(255,180,60,0)');
+  TR.forEach(t=>{GL.texes[t.id]=glowTex(hexCss(t.color,1),hexCss(t.color,0))});
+  function hexCss(h,a){return 'rgba('+(h>>16&255)+','+(h>>8&255)+','+(h&255)+','+a+')'}
+
+  /* campo de estrelas */
+  const N=2600,pos=new Float32Array(N*3),col=new Float32Array(N*3),cc=new THREE.Color();
+  for(let i=0;i<N;i++){
+    const r=90+Math.random()*90,th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+    pos[i*3]=r*Math.sin(ph)*Math.cos(th);pos[i*3+1]=r*Math.cos(ph)*.7;pos[i*3+2]=r*Math.sin(ph)*Math.sin(th);
+    cc.setHSL(.55+Math.random()*.25,.5,.55+Math.random()*.35);
+    col[i*3]=cc.r;col[i*3+1]=cc.g;col[i*3+2]=cc.b;
+  }
+  const sg=new THREE.BufferGeometry();
+  sg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  sg.setAttribute('color',new THREE.BufferAttribute(col,3));
+  GL.starPts=new THREE.Points(sg,new THREE.PointsMaterial({size:1.5,vertexColors:true,transparent:true,opacity:.85,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
+  scene.add(GL.starPts);
+  /* poeira próxima */
+  const DN=380,dp=new Float32Array(DN*3);
+  for(let i=0;i<DN;i++){
+    const r=18+Math.random()*55,th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+    dp[i*3]=r*Math.sin(ph)*Math.cos(th);dp[i*3+1]=(Math.random()-.5)*26;dp[i*3+2]=r*Math.sin(ph)*Math.sin(th);
+  }
+  const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(dp,3));
+  GL.dust=new THREE.Points(dg,new THREE.PointsMaterial({color:0xbfa8ff,size:.55,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));
+  scene.add(GL.dust);
+  /* nebulosas */
+  function nebula(colHex,x,y,z,s,op){
+    const cv2=document.createElement('canvas');cv2.width=cv2.height=256;const c2=cv2.getContext('2d');
+    const g2=c2.createRadialGradient(128,128,10,128,128,126);
+    const r=(colHex>>16&255),g=(colHex>>8&255),b=(colHex&255);
+    g2.addColorStop(0,'rgba('+r+','+g+','+b+','+op+')');g2.addColorStop(1,'rgba('+r+','+g+','+b+',0)');
+    c2.fillStyle=g2;c2.fillRect(0,0,256,256);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv2),blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
+    sp.position.set(x,y,z);sp.scale.set(s,s,1);scene.add(sp);return sp;
+  }
+  TR.forEach((t,i)=>{
+    const a=i*(Math.PI/2)+Math.PI/4,R=13.5;
+    nebula(t.color,Math.cos(a)*R*.82,[1.3,-1.1,.9,-1.5][i],Math.sin(a)*R*.82,30+Math.random()*10,.14);
+    nebula(t.color,Math.cos(a)*R*.6,[1.3,-1.1,.9,-1.5][i]+3,Math.sin(a)*R*.6,18,.1);
+  });
+  nebula(0x6a3cff,0,0,0,44,.12);nebula(0xff5ca8,-6,4,-4,26,.08);nebula(0x22e0d8,8,-3,6,22,.07);
+
+  /* NEXO central */
+  const nx=new THREE.Mesh(new THREE.IcosahedronGeometry(1.7,1),new THREE.MeshBasicMaterial({color:0xffd166,wireframe:true}));
+  scene.add(nx);GL.nexus=nx;
+  const nxCore=new THREE.Mesh(new THREE.IcosahedronGeometry(.9,2),new THREE.MeshBasicMaterial({color:0xfff3d0}));
+  scene.add(nxCore);GL.nxCore=nxCore;
+  const nglow=new THREE.Sprite(new THREE.SpriteMaterial({map:GL.goldTex,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
+  nglow.scale.set(10,10,1);scene.add(nglow);GL.nxGlow=nglow;
+  [[2.8,.5,0xffd166],[3.4,-.35,0xa06bff]].forEach((rr,i)=>{
+    const rg=new THREE.Mesh(new THREE.TorusGeometry(rr[0],.045,10,80),new THREE.MeshBasicMaterial({color:rr[2],transparent:true,opacity:.55}));
+    rg.rotation.x=rr[1];scene.add(rg);GL.nxRings.push(rg);
+  });
+  const nl=new THREE.PointLight(0xffd166,1.4,60);scene.add(nl);GL.nxLight=nl;
+
+  /* estrelas das missões */
+  TR.forEach((t,ti)=>{
+    t.mis.forEach((id,j)=>{
+      const p=clusterPos(ti,j,t.mis.length);
+      const g=new THREE.Group();g.position.copy(p);g.userData={id,state:'lock',baseY:p.y,ph:Math.random()*6.28};
+      const core=new THREE.Mesh(new THREE.SphereGeometry(.55,20,20),new THREE.MeshBasicMaterial({color:t.color}));
+      core.userData.id=id;g.add(core);
+      const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:GL.texes[t.id],blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
+      glow.scale.set(3.8,3.8,1);g.add(glow);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(1.0,.05,8,40),new THREE.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.9}));
+      ring.rotation.x=1.2;ring.visible=false;g.add(ring);
+      scene.add(g);GL.stars[id]=g;GL.cores[id]=core;GL.glows[id]=glow;GL.rings[id]=ring;
+    });
+    /* linhas da constelação */
+    for(let j=0;j<t.mis.length-1;j++){
+      const a=GL.stars[t.mis[j]].position,b=GL.stars[t.mis[j+1]].position;
+      const lg=new THREE.BufferGeometry().setFromPoints([a,b]);
+      const ln=new THREE.Line(lg,new THREE.LineBasicMaterial({color:t.color,transparent:true,opacity:.1}));
+      scene.add(ln);GL.lines.push({line:ln,a:t.mis[j],b:t.mis[j+1],col:t.color});
+    }
+  });
+  ORDER.forEach(id=>setStarState(id));
+  updateLines();
+  /* labels das constelações */
+  TR.forEach((t,i)=>{
+    const el=document.createElement('div');el.className='clabel';el.id='clab'+i;
+    el.innerHTML='<b style="color:'+t.css+'">'+t.name+'</b><span class="lp" id="clp'+i+'"></span>';
+    document.body.appendChild(el);GL.labels.push({el,ti:i,p:clusterPos(i,(t.mis.length-1)/2,t.mis.length).clone().add(new THREE.Vector3(0,3.4,0))});
+  });
+
+  /* interação */
+  const el=renderer.domElement;
+  const pts=new Map();let pinchD=0;
+  el.addEventListener('pointerdown',e=>{
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2){const a=[...pts.values()];pinchD=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}
+    GL.drag=true;GL.moved=0;GL.px=e.clientX;GL.py=e.clientY;el.setPointerCapture(e.pointerId)});
+  el.addEventListener('pointermove',e=>{
+    if(pts.has(e.pointerId))pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2){
+      const a=[...pts.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      if(pinchD>0&&!GL.fly)GL.tRadius=Math.max(11,Math.min(60,GL.tRadius*(pinchD/d)));
+      pinchD=d;GL.idleT=0;return;
+    }
+    if(GL.drag){
+      const dx=e.clientX-GL.px,dy=e.clientY-GL.py;GL.px=e.clientX;GL.py=e.clientY;
+      GL.moved+=Math.abs(dx)+Math.abs(dy);
+      if(!GL.fly){GL.tTheta+=dx*.0045;GL.tPhi=Math.max(.2,Math.min(1.4,GL.tPhi-dy*.0035))}
+      GL.idleT=0;
+    }else if(!GL.openDrawer){hoverCheck(e.clientX,e.clientY)}
+  });
+  function endPtr(e){pts.delete(e.pointerId);pinchD=0;GL.drag=false;
+    if(GL.moved<7&&!GL.openDrawer)clickCheck(e.clientX,e.clientY)}
+  el.addEventListener('pointerup',endPtr);
+  el.addEventListener('pointercancel',endPtr);
+  el.addEventListener('wheel',e=>{
+    e.preventDefault();
+    if(!GL.fly){GL.tRadius=Math.max(11,Math.min(60,GL.tRadius*(1+e.deltaY*.0011)));GL.idleT=0}
+  },{passive:false});
+  el.addEventListener('pointerleave',()=>{GL.drag=false;unhover()});
+  addEventListener('resize',resize);resize();
+}
+function resize(){
+  if(!GL.ok)return;
+  const w=innerWidth,h=innerHeight;
+  GL.renderer.setSize(w,h,false);GL.cam.aspect=w/h;GL.cam.updateProjectionMatrix();
+}
+function pickAt(x,y){
+  const m=new THREE.Vector2((x/innerWidth)*2-1,-(y/innerHeight)*2+1);
+  GL.ray.setFromCamera(m,GL.cam);
+  const targets=Object.values(GL.cores);
+  const hits=GL.ray.intersectObjects(targets,false);
+  return hits.length?hits[0].object.userData.id:null;
+}
+function hoverCheck(x,y){
+  const id=pickAt(x,y);
+  if(id!==GL.hover){
+    unhover();GL.hover=id;
+    if(id!==null&&id!==undefined){
+      sfx('hover');
+      const g=GL.stars[id],m=MS[id];
+      const tip=document.getElementById('ttip');
+      tip.querySelector('.tn').textContent='Selo '+RM[seloNum(id)-1]+' · '+m.name;
+      const st=g.userData.state;
+      tip.querySelector('.ts').textContent=st==='done'?'✓ Desvendado':st==='avail'?'Toque para entrar':'Bloqueado — avance pela constelação';
+      tip.style.borderColor=st==='lock'?'rgba(255,255,255,.12)':trOf(id).css;
+      tip.classList.add('on');
+      document.body.style.cursor='pointer';
+    }
+  }
+  if(GL.hover!==null&&GL.hover!==undefined){
+    const g=GL.stars[GL.hover],v=g.position.clone().project(GL.cam);
+    const tip=document.getElementById('ttip');
+    tip.style.left=((v.x*.5+.5)*innerWidth)+'px';
+    tip.style.top=((-v.y*.5+.5)*innerHeight-14)+'px';
+  }
+}
+function unhover(){
+  GL.hover=null;document.getElementById('ttip').classList.remove('on');
+  if(!GL.drag)document.body.style.cursor='';
+}
+function clickCheck(x,y){
+  const id=pickAt(x,y);
+  if(id===null||id===undefined)return;
+  const st=GL.stars[id].userData.state;
+  if(st==='lock'){if(GL.onLocked)GL.onLocked(id)}
+  else if(GL.onStarClick)GL.onStarClick(id);
+}
+function galaxyFrame(){
+  requestAnimationFrame(galaxyFrame);
+  if(!GL.ok||document.hidden)return;
+  const now=performance.now(),dt=Math.min(.05,(now-(GL._lt||now))/1000);GL._lt=now;
+  GL.idleT+=dt;
+  if(GL.idleT>6&&!GL.fly&&!GL.openDrawer)GL.tTheta+=dt*.05;
+  /* voo de câmera */
+  if(GL.fly){
+    const f=GL.fly,p=Math.min(1,(now-f.t0)/f.dur),e=easeC(p);
+    GL.theta=f.from.theta+(f.to.theta-f.from.theta)*e;
+    GL.phi=f.from.phi+(f.to.phi-f.from.phi)*e;
+    GL.radius=f.from.radius+(f.to.radius-f.from.radius)*e;
+    GL.tgt.set(f.from.tx+(f.to.tx-f.from.tx)*e,f.from.ty+(f.to.ty-f.from.ty)*e,f.from.tz+(f.to.tz-f.from.tz)*e);
+    GL.tTheta=GL.theta;GL.tPhi=GL.phi;GL.tRadius=GL.radius;GL.tTgt.copy(GL.tgt);
+    if(p>=1){const cb=f.cb;GL.fly=null;GL.idleT=0;if(cb)cb()}
+  }else{
+    GL.theta+=(GL.tTheta-GL.theta)*.09;GL.phi+=(GL.tPhi-GL.phi)*.09;GL.radius+=(GL.tRadius-GL.radius)*.09;
+    GL.tgt.lerp(GL.tTgt,.09);
+  }
+  GL.cam.position.set(
+    GL.tgt.x+GL.radius*Math.sin(GL.phi)*Math.sin(GL.theta),
+    GL.tgt.y+GL.radius*Math.cos(GL.phi),
+    GL.tgt.z+GL.radius*Math.sin(GL.phi)*Math.cos(GL.theta));
+  GL.cam.lookAt(GL.tgt);
+  /* progresso → energia do nexo */
+  const pr=done.size/16;
+  GL.pulse+=dt;
+  GL.nexus.rotation.y+=dt*(.25+pr*.8);GL.nexus.rotation.x+=dt*.1;
+  GL.nxCore.rotation.y-=dt*(.4+pr);GL.nxCore.scale.setScalar(.9+Math.sin(GL.pulse*2.2)*.06+pr*.35);
+  GL.nxGlow.material.opacity=.5+pr*.45+Math.sin(GL.pulse*2)*.08;
+  GL.nxGlow.scale.setScalar(9+pr*7+Math.sin(GL.pulse*2)*.6);
+  GL.nxLight.intensity=1.2+pr*2.2;
+  GL.nxRings.forEach((r,i)=>{r.rotation.z+=dt*(.3+pr*.9)*(i?-1:1);r.rotation.x+=dt*.12*(i?1:-1)});
+  /* estrelas: flutuar + pulsar */
+  for(const id in GL.stars){
+    const g=GL.stars[id],u=g.userData;
+    g.position.y=u.baseY+Math.sin(GL.pulse*1.1+u.ph)*.32;
+    GL.rings[id].rotation.z+=dt*1.4;
+    if(u.state==='avail'){
+      const s=.85+Math.sin(GL.pulse*2.6+u.ph)*.16;
+      GL.glows[id].scale.setScalar(3.8*s);GL.glows[id].material.opacity=.65+Math.sin(GL.pulse*2.6+u.ph)*.25;
+      GL.cores[id].scale.setScalar(.9+Math.sin(GL.pulse*2.6+u.ph)*.1);
+    }else if(u.state==='done'){
+      GL.glows[id].material.opacity=.8+Math.sin(GL.pulse*1.6+u.ph)*.15;
+    }
+  }
+  /* linhas */
+  GL.lines.forEach(L=>{
+    const on=done.has(L.a)&&done.has(L.b);
+    L.line.material.opacity+=((on?.55:.1)-L.line.material.opacity)*.05;
+  });
+  GL.starPts.rotation.y+=dt*.006;GL.dust.rotation.y-=dt*.01;
+  /* bursts 3D */
+  for(let i=GL.bursts.length-1;i>=0;i--){
+    const B=GL.bursts[i];B.life-=dt;
+    const pa=B.geo.attributes.position;
+    for(let j=0;j<B.vels.length/3;j++){
+      B.vels[j*3]*=.982;B.vels[j*3+1]=B.vels[j*3+1]*.982-dt*1.2;B.vels[j*3+2]*=.982;
+      pa.setXYZ(j,pa.getX(j)+B.vels[j*3],pa.getY(j)+B.vels[j*3+1],pa.getZ(j)+B.vels[j*3+2]);
+    }
+    pa.needsUpdate=true;B.mat.opacity=Math.max(0,B.life/1.4);
+    if(B.life<=0){GL.scene.remove(B.pts);B.geo.dispose();B.mat.dispose();GL.bursts.splice(i,1)}
+  }
+  /* labels projetados */
+  GL.labels.forEach(L=>{
+    const v=L.p.clone().project(GL.cam);
+    if(v.z<1&&v.z>-1){
+      L.el.style.left=((v.x*.5+.5)*innerWidth)+'px';
+      L.el.style.top=((-v.y*.5+.5)*innerHeight)+'px';
+      L.el.style.opacity=GL.radius>19?1:0;
+    }else L.el.style.opacity=0;
+    const t=TR[L.ti],n=t.mis.filter(m=>done.has(m)).length;
+    const sp=document.getElementById('clp'+L.ti);
+    if(sp)sp.textContent=' '+n+'/'+t.mis.length;
+    const open=trOpen(L.ti);
+    L.el.style.opacity=L.el.style.opacity*(open?1:.35);
+  });
+  GL.renderer.render(GL.scene,GL.cam);
+}
+function burst3D(pos,colHex,n){
+  if(!GL.ok)return;
+  n=n||110;
+  const geo=new THREE.BufferGeometry(),p=new Float32Array(n*3),vels=new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    p[i*3]=pos.x;p[i*3+1]=pos.y;p[i*3+2]=pos.z;
+    const a=Math.random()*6.283,b=Math.random()*Math.PI,s=2+Math.random()*5;
+    vels[i*3]=Math.cos(a)*Math.sin(b)*s;vels[i*3+1]=Math.cos(b)*s;vels[i*3+2]=Math.sin(a)*Math.sin(b)*s;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(p,3));
+  const mat=new THREE.PointsMaterial({color:colHex,size:.34,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false});
+  const pts=new THREE.Points(geo,mat);GL.scene.add(pts);
+  GL.bursts.push({pts,geo,mat,vels,life:1.4});
+}
+function updateLines(){GL.lines.forEach(L=>{const on=done.has(L.a)&&done.has(L.b);L.line.material.opacity=on?.55:.1})}
+/* ================= DESAFIOS (7 tipos) ================= */
+let chSt=null,chTok=0;
+function chLab(txt,ic){return '<div class="chlab"><i class="fas '+ic+'"></i>'+txt+'</div>'}
+function renderChallenge(m){
+  if(!m||!m.ch)return;
+  const tok=++chTok;
+  const c=m.ch;chSt={tok,type:c.type,err:0,fixed:0,open:[],lock:false,selL:-1,sel:new Set()};
+  let h='';
+  switch(c.type){
+    case 'quiz':
+      h+=chLab('Desafio · Múltipla escolha','fa-circle-question')+'<div class="chq">'+c.q+'</div><div id="opts">';
+      c.opts.forEach((o,i)=>{h+='<button class="opt" onclick="ansQuiz('+i+',this)"><span class="ol">'+String.fromCharCode(65+i)+'</span><span>'+o+'</span></button>'});
+      h+='</div>';break;
+    case 'tf':
+      h+=chLab('Desafio · Verdadeiro ou Falso','fa-scale-balanced')+'<div class="chq" style="font-style:italic;color:#d8d0ee">“'+c.st+'”</div><div class="tfbt">'+
+      '<button class="tf" onclick="ansTf(true,this)"><i class="fas fa-check"></i>Verdadeiro</button>'+
+      '<button class="tf" onclick="ansTf(false,this)"><i class="fas fa-xmark"></i>Falso</button></div>';break;
+    case 'seq':
+      chSt.items=shuf(c.items.map((t,i)=>({t,i})));
+      h+=chLab('Desafio · Ordene a sequência','fa-sort')+'<div class="chq">Toque nos passos na <b style="color:var(--gold)">ordem correta</b>:</div><div id="seqL">';
+      chSt.items.forEach((it,k)=>{h+='<div class="seqit" data-k="'+k+'" onclick="ansSeq('+k+',this)"><span class="sn">?</span><span>'+it.t+'</span></div>'});
+      h+='</div>';break;
+    case 'decode':{
+      const letters=shuf(c.ans.split(''));
+      chSt.built=[];
+      h+=chLab('Desafio · Decifre o termo','fa-key')+'<div id="built"><span class="ph">toque nas letras abaixo</span></div><div class="tiles">';
+      letters.forEach((L,i)=>{h+='<button class="tl" id="tl'+i+'" onclick="tlPush('+i+',this)">'+L+'</button>'});
+      h+='</div><div style="display:flex;gap:.6rem;flex-wrap:wrap"><button class="btn sm gho" onclick="tlClear()"><i class="fas fa-eraser" style="margin-right:.4rem"></i>Limpar</button>'+
+      '<button class="btn sm gho" onclick="tlHint()"><i class="fas fa-lightbulb" style="margin-right:.4rem"></i>Dica</button>'+
+      '<button class="btn sm" id="tlGo" onclick="tlCheck()" disabled style="opacity:.4;pointer-events:none">Verificar</button></div>'+
+      '<div id="tlHint" style="display:none;margin-top:.8rem;font-size:.84rem;color:var(--ciano)"><i class="fas fa-angle-right"></i> '+c.hint+'</div>';break;}
+    case 'memory':{
+      const cards=[];c.pairs.forEach((p,pi)=>{cards.push({pi,txt:p.t},{pi,txt:p.d})});shuf(cards);
+      chSt.cards=cards;chSt.found=0;
+      h+=chLab('Desafio · Jogo da memória','fa-clone')+'<div class="chq">Encontre os <b style="color:var(--gold)">4 pares</b> correspondentes:</div><div class="mgrid">';
+      cards.forEach((cd,i)=>{h+='<div class="mc" id="mc'+i+'" onclick="flipMc('+i+')"><span class="mf"><i class="fas fa-star"></i></span>'+cd.txt+'</div>'});
+      h+='</div>';break;}
+    case 'multi':
+      h+=chLab('Desafio · Seleção múltipla','fa-list-check')+'<div class="chq">'+c.q+'</div><div class="mchk">';
+      c.items.forEach((it,i)=>{h+='<div class="mck" id="mk'+i+'" onclick="togMk('+i+',this)"><span class="bx"><i class="fas fa-check"></i></span><span>'+it+'</span></div>'});
+      h+='</div><div style="margin-top:1rem"><button class="btn sm" onclick="checkMk()">Confirmar seleção</button></div>';break;
+    case 'match':
+      chSt.L=shuf(c.pairs.map((p,i)=>({t:p.t,i})));chSt.R=shuf(c.pairs.map((p,i)=>({d:p.d,i})));
+      h+=chLab('Desafio · Conecte os pares','fa-link')+'<div class="chq">Toque num item da <b style="color:var(--gold)">esquerda</b> e no seu par da direita:</div><div class="matchw"><div class="mcol">';
+      chSt.L.forEach((it,k)=>{h+='<button class="mmi" id="ml'+k+'" onclick="selMatchL('+k+',this)">'+it.t+'</button>'});
+      h+='</div><div class="mcol">';
+      chSt.R.forEach((it,k)=>{h+='<button class="mmi" id="mr'+k+'" onclick="selMatchR('+k+',this)">'+it.d+'</button>'});
+      h+='</div></div>';break;
+  }
+  h+='<div class="fback" id="fback"></div>';
+  dbody().innerHTML=h;
+}
+/* ---- quiz / vf ---- */
+function ansQuiz(i,el){
+  el=el||document.querySelectorAll('#opts .opt')[i];
+  const c=MS[cur].ch;
+  if(i===c.c){el.classList.add('right');lockOpts();chWon()}
+  else{el.classList.add('wrong','off');chFail(el)}
+}
+function ansTf(v,el){
+  const c=MS[cur].ch;
+  el=el||document.querySelectorAll('.tfbt .tf')[v?0:1];
+  if(v===c.c){el.classList.add('right');document.querySelectorAll('.tf').forEach(b=>b.classList.add('off'));chWon()}
+  else{el.classList.add('wrong','off');chFail(el)}
+}
+function lockOpts(){document.querySelectorAll('.opt').forEach(b=>b.classList.add('off'))}
+/* ---- sequência ---- */
+function ansSeq(k,el){
+  el=el||document.querySelector('.seqit[data-k="'+k+'"]');
+  const it=chSt.items[k];
+  if(chSt.lock)return;
+  if(it.i===chSt.fixed){
+    chSt.fixed++;el.classList.add('fixed');el.classList.add('off');
+    el.querySelector('.sn').textContent=chSt.fixed;sfx('tick');
+    if(chSt.fixed===chSt.items.length)chWon();
+  }else{
+    if(!el.classList.contains('fixed')){el.classList.add('err');setTimeout(()=>el.classList.remove('err'),500)}
+    chFail(el,true);
+  }
+}
+/* ---- decode ---- */
+function tlPush(i,el){
+  if(el.classList.contains('used'))return;
+  el.classList.add('used');chSt.built.push({i,L:el.textContent});
+  drawBuilt();sfx('flip');
+}
+function drawBuilt(){
+  const b=document.getElementById('built');
+  if(!chSt.built.length){b.innerHTML='<span class="ph">toque nas letras abaixo</span>'}
+  else b.innerHTML=chSt.built.map((x,k)=>'<button class="tl" style="min-width:38px;height:40px;font-size:.95rem" onclick="tlPop('+k+')">'+x.L+'</button>').join('');
+  const go=document.getElementById('tlGo');
+  if(go){const full=chSt.built.length===MS[cur].ch.ans.length;
+    go.disabled=!full;go.style.opacity=full?'1':'.4';go.style.pointerEvents=full?'all':'none'}
+}
+function tlPop(k){const x=chSt.built.splice(k,1)[0];const tl=document.getElementById('tl'+x.i);if(tl)tl.classList.remove('used');drawBuilt();sfx('click')}
+function tlClear(){chSt.built.forEach(x=>{const tl=document.getElementById('tl'+x.i);if(tl)tl.classList.remove('used')});chSt.built=[];drawBuilt();sfx('click')}
+function tlHint(){document.getElementById('tlHint').style.display='block';sfx('hover')}
+function tlCheck(){
+  const c=MS[cur].ch,guess=chSt.built.map(x=>x.L).join('').toLowerCase();
+  if(guess===c.ans){chWon()}
+  else{chSt.err++;errCnt++;sfx('wrong');shakeFx();
+    const b=document.getElementById('built');b.style.animation='shk .45s';setTimeout(()=>b.style.animation='',500);
+    lmSay(rp('wrong'),'mock');
+  }
+}
+/* ---- memória ---- */
+function flipMc(i){
+  if(chSt.lock)return;
+  const el=document.getElementById('mc'+i);
+  if(el.classList.contains('flip')||el.classList.contains('done'))return;
+  el.classList.add('flip');sfx('flip');chSt.open.push(i);
+  if(chSt.open.length===2){
+    chSt.lock=true;
+    const tokSaved=chSt.tok;
+    const [a,b]=chSt.open;
+    if(chSt.cards[a].pi===chSt.cards[b].pi){
+      setTimeout(()=>{
+        document.getElementById('mc'+a).classList.add('done');
+        document.getElementById('mc'+b).classList.add('done');
+        chSt.found++;sfx('match');chSt.open=[];chSt.lock=false;
+        const T=tokSaved;
+        if(chSt.found===MS[cur].ch.pairs.length)setTimeout(()=>{if(chSt&&chSt.tok===T)chWon()},420);
+      },340);
+    }else{
+      chSt.err++;errCnt++;
+      setTimeout(()=>{
+        document.getElementById('mc'+a).classList.add('err');
+        document.getElementById('mc'+b).classList.add('err');
+        sfx('wrong');
+        setTimeout(()=>{
+          document.getElementById('mc'+a).classList.remove('flip','err');
+          document.getElementById('mc'+b).classList.remove('flip','err');
+          chSt.open=[];chSt.lock=false;
+        },480);
+      },420);
+    }
+  }
+}
+/* ---- múltipla ---- */
+function togMk(i,el){
+  el=el||document.getElementById('mk'+i);
+  if(chSt.sel.has(i)){chSt.sel.delete(i);el.classList.remove('sel')}
+  else{chSt.sel.add(i);el.classList.add('sel')}
+  sfx('tick');
+}
+function checkMk(){
+  const c=MS[cur].ch;
+  const good=c.correct.every(i=>chSt.sel.has(i))&&chSt.sel.size===c.correct.length;
+  if(good){c.correct.forEach(i=>document.getElementById('mk'+i).classList.add('right'));
+    document.querySelectorAll('.mck').forEach(e=>e.classList.add('off'));chWon()}
+  else{errCnt++;sfx('wrong');shakeFx();
+    chSt.sel.forEach(i=>{if(!c.correct.includes(i)){const el=document.getElementById('mk'+i);el.classList.add('wrongk')}});
+    c.correct.forEach(i=>{if(!chSt.sel.has(i)){const el=document.getElementById('mk'+i);el.classList.add('right')}});
+    setTimeout(()=>document.querySelectorAll('.mck').forEach(e=>e.classList.remove('wrongk','right')),900);
+    lmSay(rp('wrong'),'mock');
+  }
+}
+/* ---- pares ---- */
+function selMatchL(k,el){
+  el=el||document.getElementById('ml'+k);
+  if(el.classList.contains('done'))return;
+  document.querySelectorAll('.mmi').forEach(e=>{if(e.id[1]==='l')e.classList.remove('sel')});
+  el.classList.add('sel');chSt.selL=k;sfx('tick');
+}
+function selMatchR(k,el){
+  el=el||document.getElementById('mr'+k);
+  if(el.classList.contains('done')||chSt.selL<0){if(chSt.selL<0){el.classList.add('err');setTimeout(()=>el.classList.remove('err'),450)}return}
+  const lEl=document.getElementById('ml'+chSt.selL);
+  if(chSt.L[chSt.selL].i===chSt.R[k].i){
+    lEl.classList.remove('sel');lEl.classList.add('done');el.classList.add('done');sfx('match');
+    chSt.selL=-1;
+    const T2=chSt.tok;
+    if(document.querySelectorAll('.mmi.done').length===MS[cur].ch.pairs.length*2)setTimeout(()=>{if(chSt&&chSt.tok===T2)chWon()},420);
+  }else{
+    errCnt++;sfx('wrong');el.classList.add('err');lEl.classList.add('err');
+    setTimeout(()=>{el.classList.remove('err');lEl.classList.remove('err')},450);
+  }
+}
+/* ---- resultado ---- */
+function chFail(el,silent){
+  errCnt++;streak=0;updHUD();
+  sfx('wrong');shakeFx();
+  if(!silent)setTimeout(()=>{if(el)el.classList.remove('wrong')},600);
+  fb('no','Resposta incorreta',rp('wrong'));
+  setEmo(Math.random()<.5?'mock':'sad');
+}
+function chWon(){
+  sfx('correct');streak++;S.best=Math.max(S.best,streak);
+  const m=MS[cur];
+  const perfect=errCnt===0;
+  let xp=30+(perfect?10:0);
+  if(streak>=3)xp+=Math.min(15,(streak-2)*5);
+  fb('ok',perfect?'Impecável! Acerto na primeira.':chSt.type==='memory'||chSt.type==='match'||chSt.type==='seq'?'Sequência desvendada!':'Resposta correta!',rp('correct'));
+  floatXP('+'+xp+' XP');
+  const r=document.getElementById('dbody').getBoundingClientRect();
+  confetti(24,r.left+r.width/2,r.top+120);
+  gainXP(xp);
+  if(streak>=5)ach('cmb');
+  if(perfect)ach('perf');
+  setEmo('celebrate');
+  chSt.done=true;
+  document.querySelectorAll('.opt,.tf,.seqit,.tl,.mc,.mck,.mmi').forEach(e=>e.classList.add('off'));
+  dfoot().innerHTML='<button class="btn sm gold" onclick="showKnowledge()"><i class="fas fa-book-open" style="margin-right:.5rem"></i>Conhecimento Desvendado</button>';
+}
+function fb(kind,title,body){
+  const el=document.getElementById('fback');
+  el.className='fback on '+kind;
+  el.innerHTML='<span class="fm">'+title+'</span>'+body;
+}
+/* ================= ESTADO ================= */
+let done=new Set(),cur=null,errCnt=0,streak=0,idleTimer=null;
+let S={xp:0,best:0,bon:0,clicks:0,ach:new Set()};
+function save(){try{localStorage.setItem('mcs_v3',JSON.stringify({d:[...done],xp:S.xp,best:S.best,bon:S.bon,clk:S.clicks,ach:[...S.ach],sfx:AU.sfx,mus:AU.mus}))}catch(e){}}
+function load(){try{const s=localStorage.getItem('mcs_v3');if(s){const o=JSON.parse(s);done=new Set(o.d||[]);S.xp=o.xp||0;S.best=o.best||0;S.bon=o.bon||0;S.clicks=o.clk||0;S.ach=new Set(o.ach||[]);if(o.sfx===false)AU.sfx=false;if(o.mus===false)AU.mus=false}}catch(e){}}
+function dbody(){return document.getElementById('dbody')}
+function dfoot(){return document.getElementById('dfoot')}
+function rp(c){const a=PH[c];return a[Math.floor(Math.random()*a.length)]}
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* ================= FX 2D (canvas) ================= */
+const FX={ps:[],orbs:[],rings:[],shakeT:0};
+function fxInit(){
+  const c=document.getElementById('fx');FX.c=c;FX.x=c.getContext('2d');
+  const rs=()=>{c.width=innerWidth;c.height=innerHeight};rs();addEventListener('resize',rs);
+  (function loop(){
+    requestAnimationFrame(loop);
+    if(document.hidden)return;
+    const x=FX.x;x.clearRect(0,0,c.width,c.height);
+    /* confetti */
+    FX.ps=FX.ps.filter(p=>p.l>0);
+    for(const p of FX.ps){
+      p.x+=p.vx;p.y+=p.vy;p.vy+=.13;p.vx*=.99;p.r+=p.vr;p.l-=.012;
+      x.save();x.globalAlpha=Math.max(0,Math.min(1,p.l));x.translate(p.x,p.y);x.rotate(p.r);
+      x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore();
+    }
+    /* orbes de XP */
+    FX.orbs=FX.orbs.filter(o=>o.alive);
+    for(const o of FX.orbs){
+      const dx=o.tx-o.x,dy=o.ty-o.y,d=Math.hypot(dx,dy);
+      if(d<16){o.alive=false;pulseChip();sfx('coin');continue}
+      o.vx=(o.vx+dx*.016)*.93;o.vy=(o.vy+dy*.016)*.93;
+      o.x+=o.vx;o.y+=o.vy;o.tr=Math.max(.04,o.tr-.004);
+      x.globalAlpha=.95;x.fillStyle=o.c;x.shadowColor=o.c;x.shadowBlur=14;
+      x.beginPath();x.arc(o.x,o.y,o.r,0,6.29);x.fill();x.shadowBlur=0;
+    }
+    /* anéis de choque */
+    FX.rings=FX.rings.filter(r=>r.l>0);
+    for(const r of FX.rings){
+      r.l-=.02;r.r+=(r.max-r.r)*.08;
+      x.globalAlpha=Math.max(0,r.l);x.strokeStyle=r.c;x.lineWidth=2.4;
+      x.beginPath();x.arc(r.x,r.y,r.r,0,6.29);x.stroke();
+    }
+    x.globalAlpha=1;
+    /* screen shake */
+    if(FX.shakeT>0){
+      FX.shakeT-=.032;
+      const a=FX.shakeT*11;
+      document.getElementById('gl').style.transform='translate('+(Math.random()-.5)*a+'px,'+(Math.random()-.5)*a+'px)';
+      if(FX.shakeT<=0)document.getElementById('gl').style.transform='';
+    }
+  })();
+}
+function confetti(n,x,y){
+  const C=['#ffd166','#ff4d8d','#a06bff','#22e0d8','#ffe9b0','#ffb14d'];
+  for(let i=0;i<n;i++){
+    const a=Math.random()*6.283,s=Math.random()*6+2;
+    FX.ps.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-3,r:Math.random()*6.28,vr:(Math.random()-.5)*.3,w:Math.random()*7+4,h:Math.random()*4+3,c:C[i%6],l:1+Math.random()*.4});
+  }
+}
+function orbTo(x,y,c){
+  const t=document.getElementById('lvchip').getBoundingClientRect();
+  FX.orbs.push({x,y,vx:(Math.random()-.5)*4,vy:-3-Math.random()*2,tx:t.left+t.width/2,ty:t.top+t.height/2,r:3.4+Math.random()*2.4,c,tr:1,alive:true});
+}
+function ringAt(x,y,c){FX.rings.push({x,y,r:6,max:130,c,l:1})}
+function shakeFx(){FX.shakeT=1;sfx('shake')}
+function pulseChip(){
+  const ch=document.querySelector('#lvchip');
+  ch.style.transform='scale(1.14)';setTimeout(()=>ch.style.transform='',160);
+}
+function floatXP(txt){
+  const d=document.createElement('div');d.className='fxp';d.textContent=txt;
+  d.style.left=(46+Math.random()*10)+'%';d.style.top=(38+Math.random()*8)+'%';
+  document.body.appendChild(d);setTimeout(()=>d.remove(),1450);
+}
+
+/* ================= LUMEN fala ================= */
+let bubT=null;
+function lmSay(txt,emo){
+  const b=document.getElementById('bubble');
+  b.innerHTML='<span class="bk">Lumen</span>'+txt;
+  b.classList.add('on');
+  if(emo)setEmo(emo);
+  clearTimeout(bubT);bubT=setTimeout(()=>b.classList.remove('on'),3600);
+}
+function setEmo(k){if(LM.inst){try{LM.inst.set(k)}catch(e){}}}
+
+/* ================= HUD ================= */
+function lvlOf(x){let l=0;for(let i=0;i<LV.length;i++)if(x>=LV[i].xp)l=i;return l}
+function updHUD(){
+  const li=lvlOf(S.xp),cu=LV[li],nx=LV[li+1];
+  document.getElementById('lvn').textContent='Nível '+(li+1);
+  document.getElementById('lvt').textContent=cu.t;
+  document.getElementById('xfill').style.width=(nx?Math.min(100,(S.xp-cu.xp)/(nx.xp-cu.xp)*100):100)+'%';
+  document.getElementById('xlab').textContent=S.xp+(nx?' XP':' XP · máx');
+  document.getElementById('pfill').style.width=(done.size/16*100)+'%';
+  document.getElementById('ptxt').textContent=done.size+'/16';
+  const sc=document.getElementById('stchip');
+  if(streak>=2){sc.classList.add('on');document.getElementById('stn').textContent='x'+streak}
+  else sc.classList.remove('on');
+}
+function renderLegend(){
+  const lg=document.getElementById('legend');lg.innerHTML='';
+  TR.forEach((t,i)=>{
+    const open=trOpen(i),n=t.mis.filter(m=>done.has(m)).length;
+    const el=document.createElement('div');
+    el.className='leg'+(open?'':' lock')+(open&&n<t.mis.length?' cur':'');
+    el.innerHTML='<span class="dot" style="background:'+t.css+';color:'+t.css+'"></span>'+t.name+'<span class="lp">'+n+'/'+t.mis.length+'</span>';
+    if(GL.ok)el.style.cursor='pointer',el.onclick=()=>focusCluster(i);
+    lg.appendChild(el);
+  });
+}
+function focusCluster(i){
+  if(GL.fly||!GL.ok)return;
+  sfx('fly');GL.idleT=0;saveOverview();
+  const a=i*(Math.PI/2)+Math.PI/4,R=13.5,y0=[1.3,-1.1,.9,-1.5][i];
+  const tgt=new THREE.Vector3(Math.cos(a)*R*.75,y0,Math.sin(a)*R*.75);
+  flyTo(sphCalc(tgt.clone().add(new THREE.Vector3(0,4,10)),tgt),1100,()=>{});
+  setTimeout(()=>{if(!GL.openDrawer)flyBack(900)},3200);
+}
+function saveOverview(){GL.overview={theta:GL.tTheta,phi:GL.tPhi,radius:Math.max(26,Math.min(38,GL.tRadius))}}
+function flyBack(dur){
+  if(!GL.ok)return;
+  const o=GL.overview||{theta:GL.tTheta,phi:1.1,radius:30};
+  flyTo({theta:o.theta,phi:o.phi,radius:o.radius,tx:0,ty:0,tz:0},dur||1200,()=>{});
+}
+
+/* ================= XP / PATENTES / CONQUISTAS ================= */
+function gainXP(n,useOrb){
+  const before=lvlOf(S.xp);S.xp+=n;
+  if(useOrb){const r=document.getElementById('dbody').getBoundingClientRect();orbTo(r.left+40,r.top+60,'#ffd166')}
+  floatXP('+'+n+' XP');
+  const after=lvlOf(S.xp);
+  if(after>before)levelUp(after);
+  updHUD();save();
+}
+function levelUp(li){
+  sfx('level');confetti(70,innerWidth/2,innerHeight*.4);
+  ringAt(innerWidth/2,innerHeight*.42,'rgba(255,209,102,.9)');
+  document.getElementById('lvfn').textContent='Nível '+(li+1);
+  document.getElementById('lvft').textContent=LV[li].t;
+  const o=document.getElementById('lvlf');o.classList.add('on');
+  setTimeout(()=>o.classList.remove('on'),2600);
+  setEmo('celebrate');
+}
+function ach(id){
+  if(S.ach.has(id))return;
+  S.ach.add(id);save();sfx('bell');
+  const a=ACH.find(x=>x.id===id);
+  const t=document.createElement('div');t.className='ato';
+  t.innerHTML='<div class="ai"><i class="fas '+a.ic+'"></i></div><div><div class="at">Conquista</div><div class="an">'+a.n+'</div><div class="ad">'+a.d+'</div></div>';
+  document.getElementById('atoasts').appendChild(t);
+  setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),500)},3600);
+}
+function checkAch(){
+  if(trDone(0))ach('p1');
+  if(done.size>=5)ach('s5');
+  if(done.size>=10)ach('s10');
+  if(done.size>=16)ach('all');
+  if(S.bon>=8)ach('bon');
+}
+
+/* ================= NAVEGAÇÃO / FLUXO ================= */
+function startJ(){
+  auInit();sfx('unlock');
+  document.getElementById('intro').classList.remove('on');
+  document.getElementById('hud').classList.add('on');
+  const mw=document.getElementById('mascotWrap');mw.classList.remove('center');
+  if(AU.mus)startMusic();
+  saveOverview();
+  if(GL.ok){
+    const fa=firstAvail();
+    const a=fa>=0?TR.indexOf(trOf(fa))*(Math.PI/2)+Math.PI/4:GL.tTheta;
+    flyTo({theta:a,phi:1.06,radius:innerWidth<640?36:29,tx:0,ty:0,tz:0},2400,()=>{});
+  }else renderFallback();
+  renderLegend();updHUD();
+  setTimeout(()=>lmSay(done.size?'Bem-vindo de volta! Faltam '+(16-done.size)+' selos.':'Bem-vindo, viajante. Clique numa estrela acesa para começar.','wink'),1400);
+  idleTimer=setInterval(()=>{if(!GL.openDrawer&&Math.random()<.5)lmSay(rp('idle'),['think','sassy','wink','happy'][Math.floor(Math.random()*4)])},16000);
+  if(done.size===16)setTimeout(showFinal,1800);
+}
+function openStar(id){
+  if(GL.fly)return;
+  saveOverview();GL.idleT=0;
+  if(GL.ok){sfx('fly');const p=GL.stars[id].position;
+    const dir=p.clone().normalize();
+    const camP=p.clone().add(dir.multiplyScalar(8)).add(new THREE.Vector3(0,2.4,0));
+    flyTo(sphCalc(camP,p),1300,()=>openDrawer(id));
+  }else openDrawer(id);
+}
+function openDrawer(id){
+  cur=id;errCnt=0;GL.openDrawer=true;
+  const m=MS[id],t=trOf(id);
+  sfx('whoosh');
+  document.getElementById('dhead').querySelector('.gl').style.background='radial-gradient(circle,'+t.css+' 0%,transparent 70%)';
+  document.getElementById('dkind').innerHTML='<i class="fas '+t.icon+'" style="color:'+t.css+';margin-right:.4rem"></i>'+t.full+' · Selo '+RM[seloNum(id)-1];
+  document.getElementById('dname').textContent=m.name;
+  document.getElementById('dteaser').textContent=m.teaser;
+  document.getElementById('dname').style.color=t.css;
+  document.getElementById('drawer').classList.add('on');
+  if(done.has(id)){showReview(id)}
+  else{dfoot().innerHTML='';showIntro()}
+}
+function closeDrawer(){
+  document.getElementById('drawer').classList.remove('on');
+  GL.openDrawer=false;cur=null;chSt=null;
+  if(GL.ok)flyBack(1100);
+  renderLegend();sfx('click');
+}
+function showReview(id){
+  chSt=null;
+  const m=MS[id],t=trOf(id),b=m.bon;
+  dfoot().innerHTML='<button class="btn sm gho" onclick="closeDrawer()"><i class="fas fa-xmark" style="margin-right:.4rem"></i>Fechar</button>';
+  dbody().innerHTML=
+    '<div style="background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.3);border-radius:12px;padding:.7rem .9rem;font-size:.82rem;color:var(--glow);margin-bottom:1rem"><i class="fas fa-certificate" style="margin-right:.45rem"></i>Selo desvendado — modo revisão (sem XP adicional)</div>'+
+    '<div class="knsec"><h4><i class="fas fa-scroll"></i>Origem</h4><p>'+m.kn.origin+'</p></div>'+
+    '<div class="knsec"><h4><i class="fas fa-list-ol"></i>Passo a passo</h4><ul>'+m.kn.steps.map(s2=>'<li>'+s2+'</li>').join('')+'</ul></div>'+
+    '<div class="knsec"><h4><i class="fas fa-crosshairs"></i>Pontos-chave</h4><ul>'+m.kn.points.map(s2=>'<li>'+s2+'</li>').join('')+'</ul></div>'+
+    '<div class="knsec"><h4><i class="fas fa-gift"></i>Benefícios</h4><ul>'+m.kn.benefits.map(s2=>'<li>'+s2+'</li>').join('')+'</ul></div>'+
+    '<div class="knsec"><h4><i class="fas fa-lightbulb"></i>Situação prática — recapitulação</h4>'+
+    '<div class="bonsit">'+b.sit+'</div>'+
+    '<div class="opt right" style="margin-bottom:.6rem"><span class="ol"><i class="fas fa-check"></i></span><span>'+b.opts[b.c]+'</span></div>'+
+    '<p style="font-size:.85rem;line-height:1.6;color:#d8d0ee;font-weight:300">'+b.exp+'</p></div>';
+}
+function showIntro(){
+  const m=MS[cur],t=trOf(cur);
+  dfoot().innerHTML='<button class="btn sm gold" onclick="startCh()"><i class="fas fa-play" style="margin-right:.5rem"></i>Iniciar Desafio</button>';
+  dbody().innerHTML=
+    '<div class="kbig"><div class="ic"><i class="fas '+m.icon+'" style="color:'+t.css+'"></i></div>'+
+    '<div><div style="font-family:Cinzel,serif;color:var(--glow);font-weight:700">Missão do Selo '+RM[seloNum(cur)-1]+'</div>'+
+    '<div style="font-size:.82rem;color:var(--mut)">Complete o desafio para desvendar o conhecimento e enfrentar a situação prática.</div></div></div>'+
+    '<div class="knsec"><h4><i class="fas fa-scroll"></i>Origem da técnica</h4><p>'+m.kn.origin+'</p></div>'+
+    '<div class="knsec"><h4><i class="fas fa-wand-magic-sparkles"></i>O que você vai explorar</h4>'+
+    '<ul>'+m.kn.benefits.slice(0,3).map(b=>'<li>'+b+'</li>').join('')+'</ul></div>';
+  setEmo('think');
+}
+function startCh(){if(cur===null||!MS[cur])return;sfx('click');dfoot().innerHTML='';renderChallenge(MS[cur])}
+function showKnowledge(){
+  sfx('click');
+  const m=MS[cur],t=trOf(cur);
+  const box=document.getElementById('knowBox');
+  box.innerHTML='<div class="kbig"><div class="ic"><i class="fas '+m.icon+'"></i></div>'+
+    '<div><div style="font-size:.66rem;letter-spacing:.26em;color:'+t.css+';text-transform:uppercase">'+t.full+'</div>'+
+    '<h3 style="color:var(--glow);font-size:1.4rem">'+m.name+'</h3></div></div>'+
+    '<div class="knsec"><h4><i class="fas fa-scroll"></i>Origem</h4><p>'+m.kn.origin+'</p></div>'+
+    '<div class="knsec"><h4><i class="fas fa-list-ol"></i>Passo a passo</h4><ul>'+m.kn.steps.map(s=>'<li>'+s+'</li>').join('')+'</ul></div>'+
+    '<div class="knsec"><h4><i class="fas fa-crosshairs"></i>Pontos-chave</h4><ul>'+m.kn.points.map(s=>'<li>'+s+'</li>').join('')+'</ul></div>'+
+    '<div class="knsec"><h4><i class="fas fa-gift"></i>Benefícios</h4><ul>'+m.kn.benefits.map(s=>'<li>'+s+'</li>').join('')+'</ul></div>'+
+    '<div style="text-align:center;margin-top:1.1rem"><button class="btn gold" onclick="showBonus()"><i class="fas fa-lightbulb" style="margin-right:.5rem"></i>Situação Prática (+15 XP)</button></div>';
+  document.getElementById('know').classList.add('on');
+  setEmo('wink');
+  if(!chSt.kxp){chSt.kxp=true;S.xp+=5;updHUD();save()}
+}
+function showBonus(){
+  sfx('click');
+  document.getElementById('know').classList.remove('on');
+  const m=MS[cur],b=m.bon;
+  dfoot().innerHTML='';
+  dbody().innerHTML=chLab('Situação prática · XP bônus','fa-lightbulb')+
+    '<div class="bonsit"><b>A situação:</b> '+b.sit+'</div>'+
+    '<div id="opts">'+b.opts.map((o,i)=>'<button class="opt" onclick="ansBon('+i+',this)"><span class="ol">'+String.fromCharCode(65+i)+'</span><span>'+o+'</span></button>').join('')+'</div>'+
+    '<div class="fback" id="fback2"></div>';
+  setEmo('think');
+}
+function ansBon(i,el){
+  const b=MS[cur].bon;
+  document.querySelectorAll('#opts .opt').forEach(o=>o.classList.add('off'));
+  const el2=document.getElementById('fback2');
+  if(i===b.c){
+    el.classList.add('right');S.bon++;sfx('correct');
+    el2.className='fback on ok';el2.innerHTML='<span class="fm">Leitura perfeita!</span>'+b.exp;
+    confetti(30,innerWidth*.7,innerHeight*.5);gainXP(15,true);
+    lmSay(rp('bonok'),'happy');achCheckBon();
+  }else{
+    el.classList.add('wrong');document.querySelectorAll('#opts .opt')[b.c].classList.add('right');
+    sfx('wrong');S.bon+=0;
+    el2.className='fback on no';el2.innerHTML='<span class="fm">A conduta segura era outra.</span>'+b.exp;
+    gainXP(5,true);lmSay(rp('bonno'),'sad');
+  }
+  dfoot().innerHTML='<button class="btn sm gold" onclick="completeMission()"><i class="fas fa-flag-checkered" style="margin-right:.5rem"></i>Concluir Missão</button>';
+}
+function achCheckBon(){if(S.bon>=8)ach('bon')}
+function completeMission(){
+  sfx('unlock');
+  const id=cur,t=trOf(id),ti=TR.indexOf(t);
+  if(done.has(id)){closeDrawer();return}
+  done.add(id);save();
+  if(GL.ok){
+    const p=GL.stars[id].position;
+    burst3D(p,0xffd166,130);burst3D(p,t.color,60);
+    ORDER.forEach(x=>setStarState(x));updateLines();
+  }
+  checkAch();
+  /* constelação completa? */
+  if(trDone(ti)){
+    gainXP(25);sfx('level');confetti(80,innerWidth/2,innerHeight*.4);
+    lmSay('Constelação da '+t.name+' completa! Você acendeu todas as suas estrelas.','celebrate');
+    const nti=ti+1;
+    if(nti<TR.length&&GL.ok){
+      setTimeout(()=>{
+        sfx('unlock');lmSay(rp('unlock'),'wow');
+        const a=nti*(Math.PI/2)+Math.PI/4;
+        burst3D(new THREE.Vector3(Math.cos(a)*13.5*.8,[1.3,-1.1,.9,-1.5][nti],Math.sin(a)*13.5*.8),TR[nti].color,90);
+      },1300);
+    }
+  }
+  closeDrawer();
+  updHUD();renderLegend();
+  if(done.size===16){setTimeout(nexusFinal,1500)}
+  else setTimeout(()=>lmSay(rp('correct'),'happy'),900);
+}
+function nexusFinal(){
+  sfx('boom');shakeFx();
+  if(GL.ok){burst3D(new THREE.Vector3(0,0,0),0xffd166,220);burst3D(new THREE.Vector3(0,0,0),0xff4d8d,120);burst3D(new THREE.Vector3(0,0,0),0x22e0d8,120)}
+  confetti(140,innerWidth/2,innerHeight*.4);
+  lmSay(rp('complete'),'celebrate');
+  setTimeout(showFinal,1600);
+}
+function showFinal(){
+  const li=lvlOf(S.xp);
+  document.getElementById('fstats').innerHTML=
+    '<div class="fstat"><b>'+S.xp+'</b><span>XP total</span></div>'+
+    '<div class="fstat"><b>'+LV[li].t+'</b><span>Patente</span></div>'+
+    '<div class="fstat"><b>x'+S.best+'</b><span>Recorde de combo</span></div>'+
+    '<div class="fstat"><b>'+S.bon+'</b><span>Situações lidas</span></div>'+
+    '<div class="fstat"><b>'+S.ach.size+'/'+ACH.length+'</b><span>Conquistas</span></div>';
+  document.getElementById('final').classList.add('on');
+  document.getElementById('hud').classList.remove('on');
+  document.getElementById('mascotWrap').classList.add('center');
+}
+function backToMap(){
+  document.getElementById('final').classList.remove('on');
+  document.getElementById('hud').classList.add('on');
+  document.getElementById('mascotWrap').classList.remove('center');
+  if(GL.ok)flyBack(1400);
+}
+function resetAll(){
+  if(!confirm('Recomeçar a jornada do zero? Todo o progresso será apagado.'))return;
+  try{localStorage.removeItem('mcs_v3')}catch(e){}
+  location.reload();
+}
+
+/* ================= CONQUISTAS modal ================= */
+function openAch(){
+  sfx('click');
+  const g=document.getElementById('agrid');
+  g.innerHTML=ACH.map(a=>{
+    const got=S.ach.has(a.id);
+    return '<div class="acard'+(got?' got':'')+'"><div class="ai"><i class="fas '+a.ic+'"></i></div><div><div class="an">'+a.n+'</div><div class="ad">'+a.d+'</div></div></div>';
+  }).join('');
+  document.getElementById('achv').classList.add('on');
+}
+function closeAch(){document.getElementById('achv').classList.remove('on');sfx('click')}
+
+/* ================= fallback sem WebGL ================= */
+function renderFallback(){
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;z-index:20;overflow-y:auto;padding:80px 16px 140px;display:flex;flex-direction:column;gap:1.4rem;align-items:center';
+  TR.forEach((t,i)=>{
+    const open=trOpen(i);
+    const box=document.createElement('div');
+    box.style.cssText='width:min(560px,94vw);background:var(--panel);border:1px solid '+t.css+'55;border-radius:16px;padding:1rem';
+    box.innerHTML='<div style="font-family:Cinzel,serif;color:'+t.css+';letter-spacing:.2em;text-transform:uppercase;font-size:.75rem;margin-bottom:.7rem">'+t.full+(open?'':' · bloqueada')+'</div>';
+    t.mis.forEach(id=>{
+      const m=MS[id],av=open&&isAvail(id),dn=done.has(id);
+      const b=document.createElement('button');
+      b.className='opt';b.style.width='100%';b.style.marginBottom='.5rem';
+      b.style.opacity=dn?'1':av?'1':'.35';
+      b.innerHTML='<span class="ol" style="background:'+(dn?'var(--gold)':av?t.css:'transparent')+'">'+(dn?'✓':RM[seloNum(id)-1])+'</span><span>'+m.name+' — '+m.teaser+'</span>';
+      if(av||dn)b.onclick=()=>openDrawer(id);
+      else b.style.pointerEvents='none';
+      box.appendChild(b);
+    });
+    d.appendChild(box);
+  });
+  document.body.appendChild(d);
+}
+
+function lockedStar(id){
+  sfx('shake');FX.shakeT=.5;
+  lmSay(rp('locked'),'sassy');
+  if(GL.ok){const g=GL.stars[id];g.position.x+=.18;setTimeout(()=>g.position.x-=.18,120)}
+}
+
+/* ================= mascote clique ================= */
+function mascotClick(){
+  S.clicks++;save();
+  if(S.clicks>=10)ach('clk');
+  auInit();
+  const emos=['wink','sassy','happy','mock','wow','think'];
+  setEmo(emos[Math.floor(Math.random()*emos.length)]);
+  lmSay(rp('idle'));
+  confetti(8,innerWidth*.14,innerHeight*.8);
+}
+
+/* ================= INICIALIZAÇÃO ================= */
+load();
+initGalaxy();
+try{LM.inst=buildLumen(document.getElementById("mcanvas"))}catch(e){LM.inst=null;window.__lmE=e.message+" | "+(e.stack||"").slice(0,300)}
+if(LM.inst)lumenLoop();
+fxInit();
+galaxyFrame();
+document.getElementById('mascotWrap').onclick=mascotClick;
+GL.onStarClick=openStar;
+GL.onLocked=lockedStar;
+addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElementById('achv').classList.contains('on'))closeAch();else if(GL.openDrawer)closeDrawer()}});
+if(done.size>0)document.querySelector('#intro .btn.gold').innerHTML='<i class="fas fa-rocket" style="margin-right:.55rem"></i>Continuar Jornada ('+done.size+'/16)';
+</script>
+</body>
+</html>
